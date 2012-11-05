@@ -46,7 +46,7 @@ class PGBrowser{
     curl_setopt($this->ch, CURLOPT_URL, $url);
     if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
     curl_setopt($this->ch, CURLOPT_POST, false);
-    curl_setopt($this->ch, CURLOPT_POSTFIELDS, false);
+    #curl_setopt($this->ch, CURLOPT_POSTFIELDS, false);
     $this->lastUrl = $url;
     $response = curl_exec($this->ch);
     return new PGPage($url, $response, $this);
@@ -116,9 +116,7 @@ class PGForm{
   }
 
   function submit(){
-    $f = array();
-    foreach($this->fields as $key => $value) $f[] = urlencode($key) . '=' . urlencode($value);
-    $body = implode($f, '&');
+    $body = http_build_query($this->fields);
 
     switch($this->method){
       case 'get':
