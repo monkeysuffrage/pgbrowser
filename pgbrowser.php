@@ -46,6 +46,7 @@ class PGBrowser{
     curl_setopt($this->ch, CURLOPT_URL, $url);
     if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
     curl_setopt($this->ch, CURLOPT_POST, false);
+    curl_setopt($this->ch, CURLOPT_POSTFIELDS, false);
     $this->lastUrl = $url;
     $response = curl_exec($this->ch);
     return new PGPage($url, $response, $this);
@@ -70,7 +71,7 @@ class PGPage{
     $this->html = $response;
     $this->browser = $browser;
     $this->dom = new DOMDocument();
-	  @$this->dom->loadHTML($response);
+    @$this->dom->loadHTML($response);
     $this->xpath = new DOMXPath($this->dom);
     $this->title = $this->xpath->query('//title')->item(0)->nodeValue;
     $this->forms = array();
