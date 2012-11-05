@@ -1,7 +1,7 @@
-pgbrowser
+PGBrowser
 =========
 
-A mechanize-like php library for managing cookies and submitting forms.
+A 'pretty good' mechanize-like php library for managing cookies and submitting forms.
 
 ```php
 require 'pgbrowser.php';
