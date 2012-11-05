@@ -46,7 +46,6 @@ class PGBrowser{
     curl_setopt($this->ch, CURLOPT_URL, $url);
     if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
     curl_setopt($this->ch, CURLOPT_POST, false);
-    #curl_setopt($this->ch, CURLOPT_POSTFIELDS, false);
     $this->lastUrl = $url;
     $response = curl_exec($this->ch);
     return new PGPage($url, $response, $this);
@@ -151,11 +150,11 @@ class PGForm{
     }
   }
 
-  function doPostBack($target, $argument){
-    $this->set('__EVENTTARGET', $target);
-    $this->set('__EVENTARGUMENT', $argument);
+  function doPostBack($attribute){
+    preg_match_all("/'([^']*)'/", $attribute, $m);  
+    $this->set('__EVENTTARGET', $m[1][0]);
+    $this->set('__EVENTARGUMENT', $m[1][1]);
     return $this->submit();
   }
 }
-
 ?>
