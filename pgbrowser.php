@@ -144,7 +144,7 @@ class PGForm{
           continue 2; break;
         case $type == 'checkbox':
           if(!$input->getAttribute('checked')){continue 2; break;}
-          $value = empty($value) ? 'on' : $value; break; 
+          $value = empty($value) ? 'on' : $value; break;
         case $tag == 'select':
           if($selected = $this->page->xpath->query('.//option[@selected]', $input)->item(0)){
             $value = $selected->nodeValue;
