@@ -25,6 +25,10 @@ class PGBrowser{
     curl_setopt($this->ch, CURLOPT_PROXY, "http://$host:$port");
   }
 
+  function setUserAgent($string){
+    curl_setopt($this->ch, CURLOPT_USERAGENT, $string);
+  }
+
   function setTimeout($timeout){
     curl_setopt($this->ch, CURLOPT_TIMEOUT_MS, $timeout);
   }
@@ -72,7 +76,7 @@ class PGPage{
     $this->dom = new DOMDocument();
     @$this->dom->loadHTML($response);
     $this->xpath = new DOMXPath($this->dom);
-    $this->title = $this->xpath->query('//title')->item(0)->nodeValue;
+    $this->title = ($node = $this->xpath->query('//title')->item(0)) ? $node->nodeValue : '';
     $this->forms = array();
     foreach($this->xpath->query('//form') as $form){
       $this->_forms[] = new PGForm($form, $this);
@@ -136,9 +140,11 @@ class PGForm{
       $tag = $input->tagName;
       switch(true){
         case $type == 'submit':
-          continue 2;
+        case $type == 'button':
+          continue 2; break;
         case $type == 'checkbox':
-          $value = empty($value) ? 'on' : $value;
+          if(!$input->getAttribute('checked')){continue 2; break;}
+          $value = empty($value) ? 'on' : $value; break; 
         case $tag == 'select':
           if($selected = $this->page->xpath->query('.//option[@selected]', $input)->item(0)){
             $value = $selected->nodeValue;
@@ -154,6 +160,7 @@ class PGForm{
     preg_match_all("/'([^']*)'/", $attribute, $m);  
     $this->set('__EVENTTARGET', $m[1][0]);
     $this->set('__EVENTARGUMENT', $m[1][1]);
+    $this->set('__ASYNCPOST', 'true');
     return $this->submit();
   }
 }
