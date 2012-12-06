@@ -1,5 +1,5 @@
 <?php
-class URI{
+class phpUri{
   var $scheme, $authority, $path, $query, $fragment;
 
   function __construct($string){
@@ -12,12 +12,12 @@ class URI{
   }
 
   function parse($string){
-    $uri = new URI($string);
+    $uri = new phpUri($string);
     return $uri;
   }
 
   function join($string){
-    $uri = new URI($string);
+    $uri = new phpUri($string);
     switch(true){
       case !empty($uri->scheme): break;
       case !empty($uri->authority): break;

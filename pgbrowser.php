@@ -99,7 +99,7 @@ class PGForm{
     $this->dom = $dom;
     $this->method = strtolower($this->dom->getAttribute('method'));
     if(empty($this->method)) $this->method = 'get';
-    $this->action = URI::parse($this->page->url)->join($this->dom->getAttribute('action'));
+    $this->action = phpUri::parse($this->page->url)->join($this->dom->getAttribute('action'));
     $this->initFields();    
   }
 
