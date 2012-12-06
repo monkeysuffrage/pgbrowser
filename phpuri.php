@@ -45,16 +45,12 @@ class phpUri{
   function normalize_path($path){
     if(empty($path)) return '';
     $normalized_path = $path;
-    $m = 0;
-    $normalized_path = preg_replace('`//+`', '/' , $normalized_path, -1, $c);
-    $m += $c;
-    $normalized_path = preg_replace('`^/\\.\\.?/`', '/' , $normalized_path, -1, $c);
-    $m += $c;
-    $normalized_path = preg_replace('`/\\.(/|$)`', '/' , $normalized_path, -1, $c);
-    $m += $c;
-    $normalized_path = preg_replace('`/[^/]*?/\\.\\.(/|$)`', '/' , $normalized_path, -1, $c);
-    $m += $c;
-    return ($m > 0) ? $this->normalize_path($normalized_path) : $normalized_path;
+    $normalized_path = preg_replace('`//+`', '/' , $normalized_path, -1, $c0);
+    $normalized_path = preg_replace('`^/\\.\\.?/`', '/' , $normalized_path, -1, $c1);
+    $normalized_path = preg_replace('`/\\.(/|$)`', '/' , $normalized_path, -1, $c2);
+    $normalized_path = preg_replace('`/[^/]*?/\\.\\.(/|$)`', '/' , $normalized_path, -1, $c3);
+    $num_matches = $c0 + $c1 + $c2 + $c3;
+    return ($num_matches > 0) ? $this->normalize_path($normalized_path) : $normalized_path;
   }
 
   function to_str(){
