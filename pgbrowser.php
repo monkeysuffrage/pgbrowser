@@ -1,4 +1,6 @@
-<?php 
+<?php
+require 'phpuri.php';
+
 class PGBrowser{ 
   var $ch, $lastUrl;
 
@@ -31,19 +33,6 @@ class PGBrowser{
 
   function setTimeout($timeout){
     curl_setopt($this->ch, CURLOPT_TIMEOUT_MS, $timeout);
-  }
-
-  function rel2abs($rel, $base){
-    if (parse_url($rel, PHP_URL_SCHEME) != '') return $rel;
-    if(empty($rel)) return $base;
-    if ($rel[0]=='#' || $rel[0]=='?') return $base.$rel;
-    extract(parse_url($base));
-    $path = preg_replace('#/[^/]*$#', '', $path);
-    if ($rel[0] == '/') $path = '';
-    $abs = "$host$path/$rel";
-    $re = array('#(/\.?/)#', '#/(?!\.\.)[^/]+/\.\./#');
-    for($n=1; $n>0; $abs=preg_replace($re, '/', $abs, -1, $n)) {}
-    return $scheme.'://'.$abs;
   }
 
   function get($url) {
@@ -110,7 +99,7 @@ class PGForm{
     $this->dom = $dom;
     $this->method = strtolower($this->dom->getAttribute('method'));
     if(empty($this->method)) $this->method = 'get';
-    $this->action = $this->browser->rel2abs($this->dom->getAttribute('action'), $this->page->url);
+    $this->action = URI::parse($this->page->url)->join($this->dom->getAttribute('action'));
     $this->initFields();    
   }
 
