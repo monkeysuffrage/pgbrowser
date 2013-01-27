@@ -35,13 +35,22 @@ class PGBrowser{
     curl_setopt($this->ch, CURLOPT_TIMEOUT_MS, $timeout);
   }
 
+  function clean($str){
+    return preg_replace(array('/&nbsp;/'), array(' '), $str);
+  }
+
+  function mock($url, $filename) {
+    $response = file_get_contents($filename);
+    return new PGPage($url, $this->clean($response), $this);
+  }
+
   function get($url) {
     curl_setopt($this->ch, CURLOPT_URL, $url);
     if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
     curl_setopt($this->ch, CURLOPT_POST, false);
     $this->lastUrl = $url;
     $response = curl_exec($this->ch);
-    return new PGPage($url, $response, $this);
+    return new PGPage($url, $this->clean($response), $this);
   }
 
   function post($url, $body) {
@@ -51,7 +60,7 @@ class PGBrowser{
     curl_setopt($this->ch, CURLOPT_POSTFIELDS,$body);
     $this->lastUrl = $url;
     $response = curl_exec($this->ch);
-    return new PGPage($url, $response, $this);
+    return new PGPage($url, $this->clean($response), $this);
   }
 }
 
@@ -81,12 +90,12 @@ class PGPage{
     return $this->_forms[0];
   }
 
-  function at($q){
-    return $this->xpath->query($q)->item(0);
+  function at($q, $el = null){
+    return $this->xpath->query($q, $el)->item(0);
   }
 
-  function search($q){
-    return $this->xpath->query($q);
+  function search($q, $el = null){
+    return $this->xpath->query($q, $el);
   }
 }
 
@@ -123,6 +132,7 @@ class PGForm{
   function initFields(){
     $this->fields = array();
     foreach($this->page->xpath->query('.//input|.//select', $this->dom) as $input){
+      $set = true;
       $value = $input->getAttribute('value');
       $type = $input->getAttribute('type');
       $name = $input->getAttribute('name');
@@ -135,13 +145,18 @@ class PGForm{
           if(!$input->getAttribute('checked')){continue 2; break;}
           $value = empty($value) ? 'on' : $value; break;
         case $tag == 'select':
-          if($selected = $this->page->xpath->query('.//option[@selected]', $input)->item(0)){
-            $value = $selected->nodeValue;
+          if($input->getAttribute('multiple')){
+            // what to do here?
+            $set = false;
           } else {
-            $value = $this->page->xpath->query('.//option', $input)->item(0)->nodeValue;
+            if($selected = $this->page->xpath->query('.//option[@selected]', $input)->item(0)){
+              $value = $selected->getAttribute('value');
+            } else {
+              $value = $this->page->xpath->query('.//option', $input)->item(0)->getAttribute('value');
+            }
           }
       }
-      $this->fields[$name] = $value;
+      if($set) $this->fields[$name] = $value;
     }
   }
 
