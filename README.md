@@ -15,3 +15,16 @@ echo $page->title;
 ```
 
 Now do something with $page->html or query it with $page->xpath->query()
+
+*New* - pgbrowser will now let you query the page with phpquery, simple-html-dom or xpath:
+
+```php
+require 'pgbrowser.php';
+require 'phpquery.php';
+$browser = new PGBrowser('phpquery');
+$page = $browser->get('http://www.google.com/search?q=php');
+foreach($page->search('li.g') as $li){
+  echo $page->at('a', $li)->text() . "\n";
+}
+```
+

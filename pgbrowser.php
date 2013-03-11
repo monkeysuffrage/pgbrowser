@@ -2,9 +2,9 @@
 require 'phpuri.php';
 
 class PGBrowser{ 
-  var $ch, $lastUrl;
+  var $ch, $lastUrl, $parserType;
 
-  function __construct(){
+  function __construct($parserType = null){
     $this->ch = curl_init();
     curl_setopt($this->ch, CURLOPT_USERAGENT, "PGBrowser/0.0.1 (http://github.com/monkeysuffrage/pgbrowser/)");
     curl_setopt($this->ch, CURLOPT_FOLLOWLOCATION, true);
@@ -21,6 +21,7 @@ class PGBrowser{
       "Expect:"
     ));
     curl_setopt($this->ch, CURLOPT_COOKIEJAR, 'cookies.txt');
+    $this->parserType = $parserType;
   }
 
   function setProxy($host, $port){
@@ -65,7 +66,7 @@ class PGBrowser{
 }
 
 class PGPage{
-  var $url, $browser, $dom, $xpath, $_forms, $title, $html;
+  var $url, $browser, $dom, $xpath, $_forms, $title, $html, $parser, $parserType;
 
   function __construct($url, $response, $browser){
     $this->url = $url;
@@ -79,6 +80,14 @@ class PGPage{
     foreach($this->xpath->query('//form') as $form){
       $this->_forms[] = new PGForm($form, $this);
     }
+    $this->setParser($browser->parserType, $response);
+  }
+
+  function setParser($parserType, $body){
+    switch(true){
+      case preg_match('/simple/i', $parserType): $this->parserType = 'simple'; $this->parser = str_get_html($body); break;
+      case preg_match('/phpquery/i', $parserType): $this->parserType = 'phpquery'; $this->parser = phpQuery::newDocumentHTML($body); break;
+    }
   }
 
   function forms(){
@@ -91,11 +100,26 @@ class PGPage{
   }
 
   function at($q, $el = null){
-    return $this->xpath->query($q, $el)->item(0);
+    switch($this->parserType){
+      case 'simple':
+        $doc = $el ? $el : $this->parser;
+        return $doc->find($q, 0);
+      case 'phpquery': return $this->search($q, $el)->eq(0);
+      default: return $this->search($q, $el)->item(0);
+    }
   }
 
   function search($q, $el = null){
-    return $this->xpath->query($q, $el);
+    switch($this->parserType){
+      case 'simple': break;
+        $doc = $el ? $el : $this->parser;
+        return $doc->find($q);
+      case 'phpquery':
+        phpQuery::selectDocument($this->parser);
+        $doc = $el ? pq($el) : $this->parser;
+        return $doc->find($q);
+      default: return $this->xpath->query($q, $el);
+    }
   }
 }
 
