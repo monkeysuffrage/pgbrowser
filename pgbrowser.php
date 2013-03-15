@@ -1,6 +1,4 @@
 <?php
-require 'phpuri.php';
-
 class PGBrowser{ 
   var $ch, $lastUrl, $parserType;
 
@@ -111,7 +109,7 @@ class PGPage{
 
   function search($q, $el = null){
     switch($this->parserType){
-      case 'simple': break;
+      case 'simple':
         $doc = $el ? $el : $this->parser;
         return $doc->find($q);
       case 'phpquery':
@@ -127,6 +125,8 @@ class PGForm{
   var $dom, $page, $browser, $fields, $action, $method;
 
   function __construct($dom, $page){
+    require_once  'phpuri.php';
+
     $this->page = $page;
     $this->browser = $this->page->browser;
     $this->dom = $dom;
