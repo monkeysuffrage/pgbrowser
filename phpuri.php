@@ -11,7 +11,7 @@ class phpUri{
     $this->fragment = $m[9][0];
   }
 
-  function parse($string){
+  public static function parse($string){
     $uri = new phpUri($string);
     return $uri;
   }
