@@ -188,7 +188,7 @@ class PGForm{
     preg_match_all("/'([^']*)'/", $attribute, $m);  
     $this->set('__EVENTTARGET', $m[1][0]);
     $this->set('__EVENTARGUMENT', $m[1][1]);
-    $this->set('__ASYNCPOST', 'true');
+    // $this->set('__ASYNCPOST', 'true');
     return $this->submit();
   }
 }
