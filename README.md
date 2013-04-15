@@ -16,7 +16,7 @@ echo $page->title;
 
 Now do something with $page->html or query it with $page->xpath->query()
 
-*New* - pgbrowser will now let you query the page with phpquery, simple-html-dom or xpath:
+PGBrowser will also let you query the page with phpquery, simple-html-dom or xpath:
 
 ```php
 require 'pgbrowser.php';
@@ -26,5 +26,12 @@ $page = $browser->get('http://www.google.com/search?q=php');
 foreach($page->search('li.g') as $li){
   echo $page->at('a', $li)->text() . "\n";
 }
+```
+
+*New* - PGBrowser can now cache requests to disk. Cached responses go into a folder called 'cache'
+
+```php
+$browser->useCache(); // turn on cacheing
+$browser->useCache(false); // turn off cacheing
 ```
 

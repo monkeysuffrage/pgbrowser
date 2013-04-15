@@ -1,6 +1,6 @@
 <?php
 class PGBrowser{ 
-  var $ch, $lastUrl, $parserType;
+  var $ch, $lastUrl, $parserType, $_useCache;
 
   function __construct($parserType = null){
     $this->ch = curl_init();
@@ -22,44 +22,62 @@ class PGBrowser{
     $this->parserType = $parserType;
   }
 
-  function setProxy($host, $port){
+  public function setProxy($host, $port){
     curl_setopt($this->ch, CURLOPT_PROXY, "http://$host:$port");
   }
 
-  function setUserAgent($string){
+  public function setUserAgent($string){
     curl_setopt($this->ch, CURLOPT_USERAGENT, $string);
   }
 
-  function setTimeout($timeout){
+  public function setTimeout($timeout){
     curl_setopt($this->ch, CURLOPT_TIMEOUT_MS, $timeout);
   }
 
-  function clean($str){
+  public function useCache($bool = true){
+    if($bool) @mkdir('cache', 0777);
+    $this->_useCache = $bool;
+  }
+
+  private function clean($str){
     return preg_replace(array('/&nbsp;/'), array(' '), $str);
   }
 
-  function mock($url, $filename) {
-    $response = file_get_contents($filename);
-    return new PGPage($url, $this->clean($response), $this);
+  private function cache_filename($url){
+    return 'cache/' . md5($url);
   }
 
-  function get($url) {
-    curl_setopt($this->ch, CURLOPT_URL, $url);
-    if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
-    curl_setopt($this->ch, CURLOPT_POST, false);
+  public function get($url) {
+    if($this->_useCache && file_exists($this->cache_filename($url))){
+      $response = file_get_contents($this->cache_filename($url));
+      $page = new PGPage($url, $this->clean($response), $this);
+    } else {
+      curl_setopt($this->ch, CURLOPT_URL, $url);
+      if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
+      curl_setopt($this->ch, CURLOPT_POST, false);
+      $response = curl_exec($this->ch);
+      $page = new PGPage($url, $this->clean($response), $this);
+      file_put_contents($this->cache_filename($url), $response);
+    }
     $this->lastUrl = $url;
-    $response = curl_exec($this->ch);
-    return new PGPage($url, $this->clean($response), $this);
+    return $page;
   }
 
-  function post($url, $body) {
-    curl_setopt($this->ch, CURLOPT_URL, $url);
-    if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
-    curl_setopt($this->ch, CURLOPT_POST, true);
-    curl_setopt($this->ch, CURLOPT_POSTFIELDS,$body);
+  public function post($url, $body) {
+    if($this->_useCache && file_exists($this->cache_filename($url . $body))){
+      $response = file_get_contents($this->cache_filename($url . $body));
+      $page = new PGPage($url, $this->clean($response), $this);
+    } else {
+      curl_setopt($this->ch, CURLOPT_URL, $url);
+      if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
+      curl_setopt($this->ch, CURLOPT_POST, true);
+      curl_setopt($this->ch, CURLOPT_POSTFIELDS,$body);
+      $response = curl_exec($this->ch);
+      $page = new PGPage($url, $this->clean($response), $this);
+      file_put_contents($this->cache_filename($url . $body), $response);
+    }
     $this->lastUrl = $url;
-    $response = curl_exec($this->ch);
-    return new PGPage($url, $this->clean($response), $this);
+    return $page;
   }
 }
 
@@ -81,23 +99,30 @@ class PGPage{
     $this->setParser($browser->parserType, $response);
   }
 
-  function setParser($parserType, $body){
+  function __destruct(){
+    if($this->browser->parserType == 'phpquery'){
+      $id = phpQuery::getDocumentID($this->parser);
+      phpQuery::unloadDocuments($id);
+    }
+  }
+
+  public function setParser($parserType, $body){
     switch(true){
       case preg_match('/simple/i', $parserType): $this->parserType = 'simple'; $this->parser = str_get_html($body); break;
       case preg_match('/phpquery/i', $parserType): $this->parserType = 'phpquery'; $this->parser = phpQuery::newDocumentHTML($body); break;
     }
   }
 
-  function forms(){
+  public function forms(){
     if(func_num_args()) return $this->_forms[func_get_arg(0)];
     return $this->_forms;
   }
 
-  function form(){
+  public function form(){
     return $this->_forms[0];
   }
 
-  function at($q, $el = null){
+  public function at($q, $el = null){
     switch($this->parserType){
       case 'simple':
         $doc = $el ? $el : $this->parser;
@@ -107,7 +132,7 @@ class PGPage{
     }
   }
 
-  function search($q, $el = null){
+  public function search($q, $el = null){
     switch($this->parserType){
       case 'simple':
         $doc = $el ? $el : $this->parser;
@@ -136,11 +161,11 @@ class PGForm{
     $this->initFields();    
   }
 
-  function set($key, $value){
+  public function set($key, $value){
     $this->fields[$key] = $value;
   }
 
-  function submit(){
+  public function submit(){
     $body = http_build_query($this->fields);
 
     switch($this->method){
@@ -153,7 +178,7 @@ class PGForm{
     }
   }
 
-  function initFields(){
+  private function initFields(){
     $this->fields = array();
     foreach($this->page->xpath->query('.//input|.//select', $this->dom) as $input){
       $set = true;
@@ -184,7 +209,7 @@ class PGForm{
     }
   }
 
-  function doPostBack($attribute){
+  public function doPostBack($attribute){
     preg_match_all("/['\"]([^'\"]*)['\"]/", $attribute, $m);  
     $this->set('__EVENTTARGET', $m[1][0]);
     $this->set('__EVENTARGUMENT', $m[1][1]);
