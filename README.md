@@ -28,7 +28,7 @@ foreach($page->search('li.g') as $li){
 }
 ```
 
-*New* - PGBrowser can now cache requests to disk. Cached responses go into a folder called 'cache'
+*New* - PGBrowser can now cache requests to disk and reuse them on subsequent requests to save network traffic. Cached responses go into a folder called 'cache'
 
 ```php
 $browser->useCache(); // turn on cacheing
