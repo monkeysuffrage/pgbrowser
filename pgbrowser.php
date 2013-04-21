@@ -1,6 +1,6 @@
 <?php
 class PGBrowser{ 
-  var $ch, $lastUrl, $parserType, $_useCache;
+  var $ch, $lastUrl, $parserType, $_useCache, $visited;
 
   function __construct($parserType = null){
     $this->ch = curl_init();
@@ -22,8 +22,19 @@ class PGBrowser{
     $this->parserType = $parserType;
   }
 
-  public function setProxy($host, $port){
+  // private methods
+  private function clean($str){
+    return preg_replace(array('/&nbsp;/'), array(' '), $str);
+  }
+
+  private function cache_filename($url){
+    return 'cache/' . md5($url);
+  }
+
+  // public methods
+  public function setProxy($host, $port, $user = NULL, $password = NULL){
     curl_setopt($this->ch, CURLOPT_PROXY, "http://$host:$port");
+    if(!empty($user)) curl_setopt($this->ch, CURLOPT_PROXYUSERPWD, "$user:$password");
   }
 
   public function setUserAgent($string){
@@ -39,12 +50,11 @@ class PGBrowser{
     $this->_useCache = $bool;
   }
 
-  private function clean($str){
-    return preg_replace(array('/&nbsp;/'), array(' '), $str);
-  }
-
-  private function cache_filename($url){
-    return 'cache/' . md5($url);
+  public function visited($url){
+    if(!isset($this->visited)) $this->visited = array();
+    if(array_search($url, $this->visited) !== false) return true;
+    $this->visited[] = $url;
+    return false;
   }
 
   public function get($url) {
@@ -106,10 +116,11 @@ class PGPage{
     }
   }
 
+  // public methods
   public function setParser($parserType, $body){
     switch(true){
       case preg_match('/simple/i', $parserType): $this->parserType = 'simple'; $this->parser = str_get_html($body); break;
-      case preg_match('/phpquery/i', $parserType): $this->parserType = 'phpquery'; $this->parser = phpQuery::newDocumentHTML($body); break;
+      case preg_match('/phpquery/i', $parserType): $this->parserType = 'phpquery'; $this->parser = @phpQuery::newDocumentHTML($body); break;
     }
   }
 
@@ -161,23 +172,7 @@ class PGForm{
     $this->initFields();    
   }
 
-  public function set($key, $value){
-    $this->fields[$key] = $value;
-  }
-
-  public function submit(){
-    $body = http_build_query($this->fields);
-
-    switch($this->method){
-      case 'get':
-        $url = $this->action .'?' . $body;
-        return $this->browser->get($url);
-      case 'post':
-        return $this->browser->post($this->action, $body);
-      default: echo "Unknown form method: $this->method\n";
-    }
-  }
-
+  // private methods
   private function initFields(){
     $this->fields = array();
     foreach($this->page->xpath->query('.//input|.//select', $this->dom) as $input){
@@ -206,6 +201,24 @@ class PGForm{
           }
       }
       if($set) $this->fields[$name] = $value;
+    }
+  }
+
+  // public methods
+  public function set($key, $value){
+    $this->fields[$key] = $value;
+  }
+
+  public function submit(){
+    $body = http_build_query($this->fields);
+
+    switch($this->method){
+      case 'get':
+        $url = $this->action .'?' . $body;
+        return $this->browser->get($url);
+      case 'post':
+        return $this->browser->post($this->action, $body);
+      default: echo "Unknown form method: $this->method\n";
     }
   }
 
