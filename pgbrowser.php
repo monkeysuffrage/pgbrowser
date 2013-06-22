@@ -1,6 +1,6 @@
 <?php
 class PGBrowser{ 
-  var $ch, $lastUrl, $parserType, $_useCache, $visited;
+  var $ch, $lastUrl, $parserType, $_useCache, $_convertUrls, $visited;
 
   function __construct($parserType = null){
     $this->ch = curl_init();
@@ -50,6 +50,10 @@ class PGBrowser{
     $this->_useCache = $bool;
   }
 
+  public function convertUrls($bool = true){
+    $this->_convertUrls = $bool;
+  }
+
   public function visited($url){
     if(!isset($this->visited)) $this->visited = array();
     if(array_search($url, $this->visited) !== false) return true;
@@ -67,24 +71,29 @@ class PGBrowser{
       curl_setopt($this->ch, CURLOPT_POST, false);
       $response = curl_exec($this->ch);
       $page = new PGPage($url, $this->clean($response), $this);
-      file_put_contents($this->cache_filename($url), $response);
+      if($this->_useCache) file_put_contents($this->cache_filename($url), $response);
     }
     $this->lastUrl = $url;
     return $page;
   }
 
-  public function post($url, $body) {
+  public function setHeaders($headers){
+    curl_setopt($this->ch, CURLOPT_HTTPHEADER, $headers);
+  }
+
+  public function post($url, $body, $headers = null) {
     if($this->_useCache && file_exists($this->cache_filename($url . $body))){
       $response = file_get_contents($this->cache_filename($url . $body));
       $page = new PGPage($url, $this->clean($response), $this);
     } else {
+      if($headers) $this->setHeaders($headers);
       curl_setopt($this->ch, CURLOPT_URL, $url);
       if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
       curl_setopt($this->ch, CURLOPT_POST, true);
       curl_setopt($this->ch, CURLOPT_POSTFIELDS,$body);
       $response = curl_exec($this->ch);
       $page = new PGPage($url, $this->clean($response), $this);
-      file_put_contents($this->cache_filename($url . $body), $response);
+      if($this->_useCache) file_put_contents($this->cache_filename($url . $body), $response);
     }
     $this->lastUrl = $url;
     return $page;
@@ -106,7 +115,21 @@ class PGPage{
     foreach($this->xpath->query('//form') as $form){
       $this->_forms[] = new PGForm($form, $this);
     }
+    if($browser->_convertUrls) $this->convertUrls();
     $this->setParser($browser->parserType, $response);
+  }
+
+  function convertUrls(){
+    $uri = phpUri::parse($this->url);
+
+    foreach($this->xpath->query('//*[@src]') as $el){
+      $el->setAttribute('src', $uri->join($el->getAttribute('src')));
+    }
+    foreach($this->xpath->query('//*[@href]') as $el){
+      $el->setAttribute('href', $uri->join($el->getAttribute('href')));
+    }
+    
+    $this->html = $this->dom->saveHTML();
   }
 
   function __destruct(){
@@ -138,7 +161,9 @@ class PGPage{
       case 'simple':
         $doc = $el ? $el : $this->parser;
         return $doc->find($q, 0);
-      case 'phpquery': return $this->search($q, $el)->eq(0);
+      case 'phpquery': 
+        $el = $this->search($q, $el)->eq(0);
+        return (0 === $el->size() && $el->markupOuter() == '') ? null : $el;
       default: return $this->search($q, $el)->item(0);
     }
   }
@@ -195,8 +220,10 @@ class PGForm{
           } else {
             if($selected = $this->page->xpath->query('.//option[@selected]', $input)->item(0)){
               $value = $selected->getAttribute('value');
+            } else if($option = $this->page->xpath->query('.//option[@value]', $input)->item(0)){
+              $value = $option->getAttribute('value');
             } else {
-              $value = $this->page->xpath->query('.//option', $input)->item(0)->getAttribute('value');
+              $value = '';
             }
           }
       }
