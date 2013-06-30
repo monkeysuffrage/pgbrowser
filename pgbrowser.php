@@ -22,13 +22,23 @@ class PGBrowser{
     $this->parserType = $parserType;
   }
 
+  public function setopt($key, $value){
+    curl_setopt($this->ch, $key, $value);
+  }
+
   // private methods
   private function clean($str){
     return preg_replace(array('/&nbsp;/'), array(' '), $str);
   }
 
+
+
   private function cache_filename($url){
     return 'cache/' . md5($url);
+  }
+
+  public function delete_cache($url){
+    unlink($this->cache_filename(($url)));
   }
 
   // public methods
