@@ -31,8 +31,6 @@ class PGBrowser{
     return preg_replace(array('/&nbsp;/'), array(' '), $str);
   }
 
-
-
   private function cache_filename($url){
     return 'cache/' . md5($url);
   }
@@ -104,6 +102,7 @@ class PGBrowser{
       $response = curl_exec($this->ch);
       $page = new PGPage($url, $this->clean($response), $this);
       if($this->_useCache) file_put_contents($this->cache_filename($url . $body), $response);
+      if($headers) $this->setHeaders(preg_replace('/(.*?:).*/','\1', $headers)); // clear headers
     }
     $this->lastUrl = $url;
     return $page;
@@ -126,7 +125,7 @@ class PGPage{
       $this->_forms[] = new PGForm($form, $this);
     }
     if($browser->_convertUrls) $this->convertUrls();
-    $this->setParser($browser->parserType, $response);
+    $this->setParser($browser->parserType, $this->html);
   }
 
   function convertUrls(){
@@ -193,7 +192,7 @@ class PGPage{
 }
 
 class PGForm{
-  var $dom, $page, $browser, $fields, $action, $method;
+  var $dom, $page, $browser, $fields, $action, $method, $enctype;
 
   function __construct($dom, $page){
     require_once  'phpuri.php';
@@ -203,6 +202,8 @@ class PGForm{
     $this->dom = $dom;
     $this->method = strtolower($this->dom->getAttribute('method'));
     if(empty($this->method)) $this->method = 'get';
+    $this->enctype = strtolower($this->dom->getAttribute('enctype'));
+    if(empty($this->enctype)) $this->enctype = '';
     $this->action = phpUri::parse($this->page->url)->join($this->dom->getAttribute('action'));
     $this->initFields();    
   }
@@ -246,6 +247,19 @@ class PGForm{
     $this->fields[$key] = $value;
   }
 
+  private function generate_boundary(){
+    return "--". substr(md5(rand(0,32000)),0,10);
+  }
+
+  private function multipart_build_query($fields, $boundary = null){
+    $retval = '';
+    foreach($fields as $key => $value){
+      $retval .= "--" . $boundary . "\nContent-Disposition: form-data; name=\"$key\"\n\n$value\n";
+    }
+    $retval .= "--" . $boundary . "--";
+    return $retval;
+  }
+
   public function submit(){
     $body = http_build_query($this->fields);
 
@@ -254,7 +268,13 @@ class PGForm{
         $url = $this->action .'?' . $body;
         return $this->browser->get($url);
       case 'post':
-        return $this->browser->post($this->action, $body);
+        if('multipart/form-data' == $this->enctype){
+          $boundary = $this->generate_boundary();
+          $body = $this->multipart_build_query($this->fields, $boundary);
+          return $this->browser->post($this->action, $body, array("Content-Type: multipart/form-data; boundary=$boundary"));
+        } else {
+          return $this->browser->post($this->action, $body);
+        }
       default: echo "Unknown form method: $this->method\n";
     }
   }
