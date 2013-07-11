@@ -69,6 +69,13 @@ class PGBrowser{
     return false;
   }
 
+  public function mock($url, $filename) {
+    $response = file_get_contents($filename);
+    $page = new PGPage($url, $this->clean($response), $this);
+    $this->lastUrl = $url;
+    return $page;
+  }
+
   public function get($url) {
     if($this->_useCache && file_exists($this->cache_filename($url))){
       $response = file_get_contents($this->cache_filename($url));
@@ -249,6 +256,7 @@ class PGForm{
 
   private function generate_boundary(){
     return "--". substr(md5(rand(0,32000)),0,10);
+
   }
 
   private function multipart_build_query($fields, $boundary = null){
@@ -259,6 +267,7 @@ class PGForm{
     $retval .= "--" . $boundary . "--";
     return $retval;
   }
+
 
   public function submit(){
     $body = http_build_query($this->fields);
@@ -273,7 +282,7 @@ class PGForm{
           $body = $this->multipart_build_query($this->fields, $boundary);
           return $this->browser->post($this->action, $body, array("Content-Type: multipart/form-data; boundary=$boundary"));
         } else {
-          return $this->browser->post($this->action, $body);
+          return $this->browser->post($this->action, $body, array("Content-Type: application/x-www-form-urlencoded"));
         }
       default: echo "Unknown form method: $this->method\n";
     }
