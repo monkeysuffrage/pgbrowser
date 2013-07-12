@@ -1,9 +1,6 @@
 <?php
 /**
 * PGBrowser - A 'pretty good' mechanize-like php library for managing cookies and submitting forms.
-*/
-
-/**
 * @package PGBrowser
 */
 class PGBrowser{ 
@@ -159,6 +156,7 @@ class PGBrowser{
 }
 
 /**
+* PGPage - A page object
 * @package PGBrowser
 */
 class PGPage{
@@ -270,6 +268,7 @@ class PGPage{
 }
 
 /**
+* A form object
 * @package PGBrowser
 */
 class PGForm{
