@@ -5,8 +5,8 @@
 * @property string $ch curl handle
 */
 class PGBrowser{ 
-  private var $ch, $lastUrl, $parserType, $_useCache, $_convertUrls, $visited;
-  public var $ch;
+  public $ch;
+  private $lastUrl, $parserType, $_useCache, $_convertUrls, $visited;
 
   function __construct($parserType = null){
     $this->ch = curl_init();
