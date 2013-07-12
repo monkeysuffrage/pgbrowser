@@ -1,14 +1,53 @@
 <?php
 /**
 * PGBrowser - A 'pretty good' mechanize-like php library for managing cookies and submitting forms.
+*
+* <code>
+* require 'pgbrowser.php';
+* 
+* $b = new PGBrowser();
+* $page = $b->get('http://www.google.com/');
+* echo $page->title;
+* </code>
+*
 * @package PGBrowser
+* @author P Guardiario <pguardiario@gmail.com>
 */
 class PGBrowser{ 
   /**
-  * $ch is the curl handle
+  * The curl handle
   */
   public $ch;
-  private $lastUrl, $parserType, $_useCache, $_convertUrls, $visited;
+
+  /**
+  * The last url visited
+  * @var string
+  */
+  private $lastUrl;
+
+  /**
+  * The parser to use (phpquery/simple-html-dom)
+  * @var string
+  */
+  private $parserType;
+
+  /**
+  * Should we use a cache?
+  * @var boolean
+  */
+  private $_useCache;
+
+  /**
+  * Should we convert relative urls to absolute?
+  * @var boolean
+  */
+  private $_convertUrls;
+
+  /**
+  * A list of urls that have been visited (sometimes)
+  * @var array
+  */
+  private $visited;
 
   function __construct($parserType = null){
     $this->ch = curl_init();
