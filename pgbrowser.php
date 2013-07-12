@@ -231,30 +231,36 @@ class PGPage{
   * @param string dom the context to search
   * @return DomNode / phpQueryOblect
   */
-  public function at($q, $el = null){
-    if($this->is_xpath($q)) return $this->search($q, $el)->item(0);
+  public function at($query, $dom = null){
+    if($this->is_xpath($query)) return $this->search($query, $dom)->item(0);
     switch($this->parserType){
       case 'simple':
-        $doc = $el ? $el : $this->parser;
-        return $doc->find($q, 0);
+        $doc = $el ? $dom : $this->parser;
+        return $doc->find($query, 0);
       case 'phpquery': 
-        $el = $this->search($q, $el)->eq(0);
-        return (0 === $el->size() && $el->markupOuter() == '') ? null : $el;
-      default: return $this->search($q, $el)->item(0);
+        $dom = $this->search($query, $dom)->eq(0);
+        return (0 === $dom->size() && $dom->markupOuter() == '') ? null : $dom;
+      default: return $this->search($query, $dom)->item(0);
     }
   }
 
-  public function search($q, $el = null){
-    if($this->is_xpath($q)) return $this->xpath->query($q, $el);
+  /**
+  * Return the matching nodes of the expression (xpath or css)
+  * @param string query the expression to search for 
+  * @param string dom the context to search
+  * @return DomNodeList / phpQueryOblect
+  */
+  public function search($query, $dom = null){
+    if($this->is_xpath($query)) return $this->xpath->query($query, $dom);
     switch($this->parserType){
       case 'simple':
-        $doc = $el ? $el : $this->parser;
-        return $doc->find($q);
+        $doc = $dom ? $dom : $this->parser;
+        return $doc->find($query);
       case 'phpquery':
         phpQuery::selectDocument($this->parser);
-        $doc = $el ? pq($el) : $this->parser;
-        return $doc->find($q);
-      default: return $this->xpath->query($q, $el);
+        $doc = $dom ? pq($dom) : $this->parser;
+        return $doc->find($query);
+      default: return $this->xpath->query($query, $dom);
     }
   }
 }
