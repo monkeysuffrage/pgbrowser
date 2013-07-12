@@ -1,5 +1,9 @@
 <?php
 /**
+* PGBrowser - A 'pretty good' mechanize-like php library for managing cookies and submitting forms.
+*/
+
+/**
 * @package PGBrowser
 */
 class PGBrowser{ 
