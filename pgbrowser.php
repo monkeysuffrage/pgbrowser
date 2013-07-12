@@ -1,4 +1,7 @@
 <?php
+/**
+* @package PGBrowser
+*/
 class PGBrowser{ 
   var $ch, $lastUrl, $parserType, $_useCache, $_convertUrls, $visited;
 
@@ -22,10 +25,6 @@ class PGBrowser{
     $this->parserType = $parserType;
   }
 
-  public function setopt($key, $value){
-    curl_setopt($this->ch, $key, $value);
-  }
-
   // private methods
   private function clean($str){
     return preg_replace(array('/&nbsp;/'), array(' '), $str);
@@ -40,24 +39,47 @@ class PGBrowser{
   }
 
   // public methods
+
+  /**
+  * Set a curl option
+  */
+  public function setopt($key, $value){
+    curl_setopt($this->ch, $key, $value);
+  }
+
+  /**
+  * Set a proxy
+  */
   public function setProxy($host, $port, $user = NULL, $password = NULL){
     curl_setopt($this->ch, CURLOPT_PROXY, "http://$host:$port");
     if(!empty($user)) curl_setopt($this->ch, CURLOPT_PROXYUSERPWD, "$user:$password");
   }
 
+  /**
+  * Set the user agent
+  */
   public function setUserAgent($string){
     curl_setopt($this->ch, CURLOPT_USERAGENT, $string);
   }
 
+  /**
+  * Set curl timeout
+  */
   public function setTimeout($timeout){
     curl_setopt($this->ch, CURLOPT_TIMEOUT_MS, $timeout);
   }
 
+  /**
+  * Turn cacheing on/off
+  */
   public function useCache($bool = true){
     if($bool) @mkdir('cache', 0777);
     $this->_useCache = $bool;
   }
 
+  /**
+  * Convert href and src attributes to absolute
+  */
   public function convertUrls($bool = true){
     $this->_convertUrls = $bool;
   }
@@ -69,6 +91,9 @@ class PGBrowser{
     return false;
   }
 
+  /**
+  * pretend to 'get' an url using local file.
+  */
   public function mock($url, $filename) {
     $response = file_get_contents($filename);
     $page = new PGPage($url, $this->clean($response), $this);
@@ -76,6 +101,16 @@ class PGBrowser{
     return $page;
   }
 
+  /**
+  * Set curl headers
+  */
+  public function setHeaders($headers){
+    curl_setopt($this->ch, CURLOPT_HTTPHEADER, $headers);
+  }
+
+  /**
+  * get an url
+  */
   public function get($url) {
     if($this->_useCache && file_exists($this->cache_filename($url))){
       $response = file_get_contents($this->cache_filename($url));
@@ -92,10 +127,9 @@ class PGBrowser{
     return $page;
   }
 
-  public function setHeaders($headers){
-    curl_setopt($this->ch, CURLOPT_HTTPHEADER, $headers);
-  }
-
+  /**
+  * Post to an url
+  */
   public function post($url, $body, $headers = null) {
     if($this->_useCache && file_exists($this->cache_filename($url . $body))){
       $response = file_get_contents($this->cache_filename($url . $body));
@@ -116,6 +150,9 @@ class PGBrowser{
   }
 }
 
+/**
+* @package PGBrowser
+*/
 class PGPage{
   var $url, $browser, $dom, $xpath, $_forms, $title, $html, $parser, $parserType;
 
@@ -172,7 +209,12 @@ class PGPage{
     return $this->_forms[0];
   }
 
+  private function is_xpath($q){
+    return preg_match('/^\.?\//', $q);
+  }
+
   public function at($q, $el = null){
+    if($this->is_xpath($q)) return $this->search($q, $el)->item(0);
     switch($this->parserType){
       case 'simple':
         $doc = $el ? $el : $this->parser;
@@ -185,6 +227,7 @@ class PGPage{
   }
 
   public function search($q, $el = null){
+    if($this->is_xpath($q)) return $this->xpath->query($q, $el);
     switch($this->parserType){
       case 'simple':
         $doc = $el ? $el : $this->parser;
@@ -198,6 +241,9 @@ class PGPage{
   }
 }
 
+/**
+* @package PGBrowser
+*/
 class PGForm{
   var $dom, $page, $browser, $fields, $action, $method, $enctype;
 
