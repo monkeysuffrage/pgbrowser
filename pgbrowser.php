@@ -49,6 +49,9 @@ class PGBrowser{
   */
   private $visited;
 
+  /**
+  * Todo: fill this out
+  */
   function __construct($parserType = null){
     $this->ch = curl_init();
     curl_setopt($this->ch, CURLOPT_USERAGENT, "PGBrowser/0.0.1 (http://github.com/monkeysuffrage/pgbrowser/)");
@@ -70,14 +73,24 @@ class PGBrowser{
   }
 
   // private methods
+
+  /**
+  * Todo: fill this out
+  */
   private function clean($str){
     return preg_replace(array('/&nbsp;/'), array(' '), $str);
   }
 
+  /**
+  * Todo: fill this out
+  */
   private function cache_filename($url){
     return 'cache/' . md5($url);
   }
 
+  /**
+  * Todo: fill this out
+  */
   public function delete_cache($url){
     unlink($this->cache_filename(($url)));
   }
@@ -128,6 +141,9 @@ class PGBrowser{
     $this->_convertUrls = $bool;
   }
 
+  /**
+  * Todo: fill this out
+  */
   public function visited($url){
     if(!isset($this->visited)) $this->visited = array();
     if(array_search($url, $this->visited) !== false) return true;
@@ -203,8 +219,59 @@ class PGBrowser{
 * @package PGBrowser
 */
 class PGPage{
-  var $url, $browser, $dom, $xpath, $_forms, $title, $html, $parser, $parserType;
+  /**
+  * The last url visited
+  * @var string
+  */
+  public $url;
 
+  /**
+  * The parent PGBrowser object
+  */
+  public $browser;
+
+  /**
+  * The DOM object constructed from the response
+  */
+  public $dom;
+
+  /**
+  * The DomXPath object associated with the Dom
+  */
+  public $xpath;
+
+  /**
+  * The PGForm objects associated with the page
+  * @var array
+  */
+  public $_forms;
+
+  /**
+  * The html title tag contents
+  * @var string
+  */
+  public $title;
+
+  /**
+  * The html body of the page
+  * @var string
+  */
+  public $html;
+
+  /**
+  * The parser can be a phpQueryObject, SimpleHtmlDom object or null
+  */
+  public $parser;
+
+  /**
+  * The type of parser (simple, phpquery)
+  * @var string
+  */
+  public $parserType;
+
+  /**
+  * Todo: fill this out
+  */
   function __construct($url, $response, $browser){
     $this->url = $url;
     $this->html = $response;
@@ -221,6 +288,9 @@ class PGPage{
     $this->setParser($browser->parserType, $this->html);
   }
 
+  /**
+  * Todo: fill this out
+  */
   function __destruct(){
     if($this->browser->parserType == 'phpquery'){
       $id = phpQuery::getDocumentID($this->parser);
@@ -228,6 +298,9 @@ class PGPage{
     }
   }
 
+  /**
+  * Todo: fill this out
+  */
   private function convertUrls(){
     $uri = phpUri::parse($this->url);
     foreach($this->xpath->query('//*[@src]') as $el){
@@ -239,10 +312,16 @@ class PGPage{
     $this->html = $this->dom->saveHTML();
   }
 
+  /**
+  * Todo: fill this out
+  */
   private function is_xpath($q){
     return preg_match('/^\.?\//', $q);
   }
 
+  /**
+  * Todo: fill this out
+  */
   private function setParser($parserType, $body){
     switch(true){
       case preg_match('/simple/i', $parserType): $this->parserType = 'simple'; $this->parser = str_get_html($body); break;
@@ -315,8 +394,49 @@ class PGPage{
 * @package PGBrowser
 */
 class PGForm{
-  var $dom, $page, $browser, $fields, $action, $method, $enctype;
+  /**
+  * The form node
+  * @var DomNode
+  */
+  public $dom;
+  
+  /**
+  * The parent PGPage object
+  */
+  public $page;
+  
+  /**
+  * The GrandParent PGBrowser object
+  */
+  public $browser;
+  
+  /**
+  * The form fields as an associative array
+  * @var array
+  */
+  public $fields;
+  
+  /**
+  * The form's action attribute
+  * @var string
+  */
+  public $action;
+  
+  /**
+  * The form's method attribute
+  * @var string
+  */
+  public $method;
+  
+  /**
+  * The form's enctype attribute
+  * @var string
+  */
+  public $enctype;
 
+  /**
+  * Todo: fill this out
+  */
   function __construct($dom, $page){
     require_once  'phpuri.php';
 
@@ -332,6 +452,10 @@ class PGForm{
   }
 
   // private methods
+
+  /**
+  * Todo: fill this out
+  */
   private function initFields(){
     $this->fields = array();
     foreach($this->page->xpath->query('.//input|.//select', $this->dom) as $input){
@@ -366,15 +490,25 @@ class PGForm{
   }
 
   // public methods
+
+  /**
+  * Todo: fill this out
+  */
   public function set($key, $value){
     $this->fields[$key] = $value;
   }
 
+  /**
+  * Todo: fill this out
+  */
   private function generate_boundary(){
     return "--". substr(md5(rand(0,32000)),0,10);
 
   }
 
+  /**
+  * Todo: fill this out
+  */
   private function multipart_build_query($fields, $boundary = null){
     $retval = '';
     foreach($fields as $key => $value){
@@ -385,6 +519,9 @@ class PGForm{
   }
 
 
+  /**
+  * Todo: fill this out
+  */
   public function submit(){
     $body = http_build_query($this->fields);
 
@@ -404,6 +541,9 @@ class PGForm{
     }
   }
 
+  /**
+  * Todo: fill this out
+  */
   public function doPostBack($attribute){
     preg_match_all("/['\"]([^'\"]*)['\"]/", $attribute, $m);  
     $this->set('__EVENTTARGET', $m[1][0]);
