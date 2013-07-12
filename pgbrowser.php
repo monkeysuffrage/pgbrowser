@@ -127,8 +127,12 @@ class PGBrowser{
     return $page;
   }
 
-  /**
+ /**
   * Post to an url
+  * @param string $url url to post
+  * @param string $body post body
+  * @param array  $headers http headers
+  * @return PGPage
   */
   public function post($url, $body, $headers = null) {
     if($this->_useCache && file_exists($this->cache_filename($url . $body))){

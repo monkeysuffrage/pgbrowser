@@ -1,4 +1,7 @@
 <?php
+/**
+* @package phpUri
+*/
 class phpUri{
   var $scheme, $authority, $path, $query, $fragment;
 
