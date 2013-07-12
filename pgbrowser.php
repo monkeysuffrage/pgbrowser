@@ -176,19 +176,6 @@ class PGPage{
     $this->setParser($browser->parserType, $this->html);
   }
 
-  function convertUrls(){
-    $uri = phpUri::parse($this->url);
-
-    foreach($this->xpath->query('//*[@src]') as $el){
-      $el->setAttribute('src', $uri->join($el->getAttribute('src')));
-    }
-    foreach($this->xpath->query('//*[@href]') as $el){
-      $el->setAttribute('href', $uri->join($el->getAttribute('href')));
-    }
-    
-    $this->html = $this->dom->saveHTML();
-  }
-
   function __destruct(){
     if($this->browser->parserType == 'phpquery'){
       $id = phpQuery::getDocumentID($this->parser);
@@ -196,27 +183,54 @@ class PGPage{
     }
   }
 
-  // public methods
-  public function setParser($parserType, $body){
-    switch(true){
-      case preg_match('/simple/i', $parserType): $this->parserType = 'simple'; $this->parser = str_get_html($body); break;
-      case preg_match('/phpquery/i', $parserType): $this->parserType = 'phpquery'; $this->parser = @phpQuery::newDocumentHTML($body); break;
+  private function convertUrls(){
+    $uri = phpUri::parse($this->url);
+    foreach($this->xpath->query('//*[@src]') as $el){
+      $el->setAttribute('src', $uri->join($el->getAttribute('src')));
     }
-  }
-
-  public function forms(){
-    if(func_num_args()) return $this->_forms[func_get_arg(0)];
-    return $this->_forms;
-  }
-
-  public function form(){
-    return $this->_forms[0];
+    foreach($this->xpath->query('//*[@href]') as $el){
+      $el->setAttribute('href', $uri->join($el->getAttribute('href')));
+    }
+    $this->html = $this->dom->saveHTML();
   }
 
   private function is_xpath($q){
     return preg_match('/^\.?\//', $q);
   }
 
+  private function setParser($parserType, $body){
+    switch(true){
+      case preg_match('/simple/i', $parserType): $this->parserType = 'simple'; $this->parser = str_get_html($body); break;
+      case preg_match('/phpquery/i', $parserType): $this->parserType = 'phpquery'; $this->parser = @phpQuery::newDocumentHTML($body); break;
+    }
+  }
+
+  // public methods
+
+  /**
+  * Return the nth form on the page
+  * @param integer $n The nth form
+  * @return PGForm
+  */
+  public function forms(){
+    if(func_num_args()) return $this->_forms[func_get_arg(0)];
+    return $this->_forms;
+  }
+
+  /**
+  * Return the first form
+  * @return PGForm
+  */
+  public function form(){
+    return $this->_forms[0];
+  }
+
+  /**
+  * Return the first matching node of the expression (xpath or css)
+  * @param string query the expression to search for 
+  * @param string dom the context to search
+  * @return DomNode / phpQueryOblect
+  */
   public function at($q, $el = null){
     if($this->is_xpath($q)) return $this->search($q, $el)->item(0);
     switch($this->parserType){
