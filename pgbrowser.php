@@ -2,9 +2,11 @@
 /**
 * PGBrowser - A 'pretty good' mechanize-like php library for managing cookies and submitting forms.
 * @package PGBrowser
+* @property string $ch curl handle
 */
 class PGBrowser{ 
-  var $ch, $lastUrl, $parserType, $_useCache, $_convertUrls, $visited;
+  private var $ch, $lastUrl, $parserType, $_useCache, $_convertUrls, $visited;
+  public var $ch;
 
   function __construct($parserType = null){
     $this->ch = curl_init();
