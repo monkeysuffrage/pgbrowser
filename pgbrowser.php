@@ -55,7 +55,8 @@ class PGBrowser{
   private $visited;
 
   /**
-  * Todo: fill this out
+  * Return a new PGBrowser object
+  $ @param parserType string the type of parser to use (phpquery/simple-html-dom)
   */
   function __construct($parserType = null){
     $this->ch = curl_init();
@@ -74,6 +75,7 @@ class PGBrowser{
       "Expect:"
     ));
     curl_setopt($this->ch, CURLOPT_COOKIEJAR, 'cookies.txt');
+    curl_setopt($this->ch, CURLOPT_HEADER, true);
     $this->parserType = $parserType;
   }
 
@@ -251,6 +253,18 @@ class PGPage{
   public $title;
 
   /**
+  * The http status code of the response
+  * @var string
+  */
+  public $status;
+
+  /**
+  * The http headers
+  * @var string
+  */
+  public $headers = array();
+
+  /**
   * The html body of the page
   * @var string
   */
@@ -273,9 +287,11 @@ class PGPage{
   function __construct($url, $response, $browser){
     $this->url = $url;
     $this->html = $response;
+    $this->parseResponse($response);
+
     $this->browser = $browser;
     $this->dom = new DOMDocument();
-    @$this->dom->loadHTML($response);
+    @$this->dom->loadHTML($this->html);
     $this->xpath = new DOMXPath($this->dom);
     $this->title = ($node = $this->xpath->query('//title')->item(0)) ? $node->nodeValue : '';
     $this->forms = array();
@@ -294,6 +310,27 @@ class PGPage{
       $id = phpQuery::getDocumentID($this->parser);
       phpQuery::unloadDocuments($id);
     }
+  }
+
+  /**
+  * Parse an http response into status, headers and body
+  * @param response string
+  */
+  function parseResponse($response){
+    // This might look weird but it needs to be mb safe.
+    $fp = fopen("php://memory", 'r+');
+    fputs($fp, $response);
+    rewind($fp);
+    $line = fgets($fp);
+    if(preg_match('/^HTTP\/\d\.\d (\d{3}) /', $line, $m)) $this->status = $m[1];
+
+    while($line = fgets($fp)){
+      if(!preg_match('/^(.*?): (.*)/', $line, $m)) break;
+      $this->headers[$m[1]] = trim($m[2]);
+    }
+
+    $this->html = stream_get_contents($fp);
+    fclose($fp);
   }
 
   /**
