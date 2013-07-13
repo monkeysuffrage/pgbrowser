@@ -2,13 +2,13 @@
 /**
 * PGBrowser - A 'pretty good' mechanize-like php library for managing cookies and submitting forms.
 *
-* <code>
+* <pre>
 * require 'pgbrowser.php';
 * 
 * $b = new PGBrowser();
 * $page = $b->get('http://www.google.com/');
 * echo $page->title;
-* </code>
+* </pre>
 *
 * @package PGBrowser
 * @author P Guardiario <pguardiario@gmail.com>
