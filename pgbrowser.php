@@ -1,18 +1,23 @@
 <?php
 /**
-* PGBrowser - A 'pretty good' mechanize-like php library for managing cookies and submitting forms.
-*
-* <pre>
-* require 'pgbrowser.php';
-* 
-* $b = new PGBrowser();
-* $page = $b->get('http://www.google.com/');
-* echo $page->title;
-* </pre>
-*
-* @package PGBrowser
-* @author P Guardiario <pguardiario@gmail.com>
-*/
+ * PGBrowser - A 'pretty good' mechanize-like php library for managing cookies and submitting forms.
+ * Website: https://github.com/monkeysuffrage/pgbrowser
+ *
+ * <pre>
+ * require 'pgbrowser.php';
+ * 
+ * $b = new PGBrowser();
+ * $page = $b->get('http://www.google.com/');
+ * echo $page->title;
+ * </pre>
+ *
+ * Licensed under The MIT License
+ * Redistributions of files must retain the above copyright notice.
+ *
+ * @package PGBrowser
+ * @author P Guardiario <pguardiario@gmail.com>
+ * @version 0.2
+ */
 class PGBrowser{ 
   /**
   * The curl handle
@@ -33,15 +38,15 @@ class PGBrowser{
 
   /**
   * Should we use a cache?
-  * @var boolean
+  * @var boolean false
   */
-  private $_useCache;
+  public $useCache = false;
 
   /**
-  * Should we convert relative urls to absolute?
-  * @var boolean
+  * If true, relative href and src attributes will be converted to absolute
+  * @var boolean false
   */
-  public $_convertUrls;
+  public $convertUrls = false;
 
   /**
   * A list of urls that have been visited (sometimes)
@@ -84,15 +89,23 @@ class PGBrowser{
   /**
   * Todo: fill this out
   */
-  private function cache_filename($url){
+  private function cacheFilename($url){
     return 'cache/' . md5($url);
   }
 
   /**
   * Todo: fill this out
   */
-  public function delete_cache($url){
-    unlink($this->cache_filename(($url)));
+  public function deleteCache($url){
+    unlink($this->cacheFilename(($url)));
+  }
+
+  /**
+  * Todo: fill this out
+  */
+  public function saveCache($url, $response){
+    if(!is_dir('cache')) @mkdir('cache', 0777);
+    file_put_contents($this->cacheFilename($url), $response);
   }
 
   // public methods
@@ -127,21 +140,6 @@ class PGBrowser{
   }
 
   /**
-  * Turn cacheing on/off
-  */
-  public function useCache($bool = true){
-    if($bool) @mkdir('cache', 0777);
-    $this->_useCache = $bool;
-  }
-
-  /**
-  * Convert href and src attributes to absolute
-  */
-  public function convertUrls($bool = true){
-    $this->_convertUrls = $bool;
-  }
-
-  /**
   * Todo: fill this out
   */
   public function visited($url){
@@ -172,8 +170,8 @@ class PGBrowser{
   * get an url
   */
   public function get($url) {
-    if($this->_useCache && file_exists($this->cache_filename($url))){
-      $response = file_get_contents($this->cache_filename($url));
+    if($this->useCache && file_exists($this->cacheFilename($url))){
+      $response = file_get_contents($this->cacheFilename($url));
       $page = new PGPage($url, $this->clean($response), $this);
     } else {
       curl_setopt($this->ch, CURLOPT_URL, $url);
@@ -181,7 +179,7 @@ class PGBrowser{
       curl_setopt($this->ch, CURLOPT_POST, false);
       $response = curl_exec($this->ch);
       $page = new PGPage($url, $this->clean($response), $this);
-      if($this->_useCache) file_put_contents($this->cache_filename($url), $response);
+      if($this->useCache) $this->saveCache($url, $response);
     }
     $this->lastUrl = $url;
     return $page;
@@ -195,8 +193,8 @@ class PGBrowser{
   * @return PGPage
   */
   public function post($url, $body, $headers = null) {
-    if($this->_useCache && file_exists($this->cache_filename($url . $body))){
-      $response = file_get_contents($this->cache_filename($url . $body));
+    if($this->useCache && file_exists($this->cacheFilename($url . $body))){
+      $response = file_get_contents($this->cacheFilename($url . $body));
       $page = new PGPage($url, $this->clean($response), $this);
     } else {
       if($headers) $this->setHeaders($headers);
@@ -206,7 +204,7 @@ class PGBrowser{
       curl_setopt($this->ch, CURLOPT_POSTFIELDS,$body);
       $response = curl_exec($this->ch);
       $page = new PGPage($url, $this->clean($response), $this);
-      if($this->_useCache) file_put_contents($this->cache_filename($url . $body), $response);
+      if($this->useCache) $this->saveCache($url . $body, $response);
       if($headers) $this->setHeaders(preg_replace('/(.*?:).*/','\1', $headers)); // clear headers
     }
     $this->lastUrl = $url;
@@ -284,7 +282,7 @@ class PGPage{
     foreach($this->xpath->query('//form') as $form){
       $this->_forms[] = new PGForm($form, $this);
     }
-    if($browser->_convertUrls) $this->convertUrls();
+    if($browser->convertUrls) $this->convertUrls();
     $this->setParser($browser->parserType, $this->html);
   }
 
