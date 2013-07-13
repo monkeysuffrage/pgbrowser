@@ -3,6 +3,8 @@ PGBrowser
 
 A 'pretty good' mechanize-like php library for managing cookies and submitting forms.
 
+Read the [Documentation](https://github.com/monkeysuffrage/pgbrowser/wiki)
+
 ```php
 require 'pgbrowser.php';
 
