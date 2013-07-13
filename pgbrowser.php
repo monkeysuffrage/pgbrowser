@@ -29,7 +29,7 @@ class PGBrowser{
   * The parser to use (phpquery/simple-html-dom)
   * @var string
   */
-  private $parserType;
+  public $parserType;
 
   /**
   * Should we use a cache?
@@ -41,7 +41,7 @@ class PGBrowser{
   * Should we convert relative urls to absolute?
   * @var boolean
   */
-  private $_convertUrls;
+  public $_convertUrls;
 
   /**
   * A list of urls that have been visited (sometimes)
