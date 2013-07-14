@@ -25,39 +25,35 @@
  */
 class PGBrowser{ 
   /**
-  * The curl handle
-  */
+   * The curl handle
+   * @var mixed
+   */
   public $ch;
 
   /**
-  * @var string The last url visited
-  */
-  private $lastUrl;
-
-  /**
-  * @var string The parser to use (phpquery/simple-html-dom)
-  */
+   * The parser to use (phpquery/simple-html-dom)
+   * @var string
+   */
   public $parserType;
 
   /**
-  * @var bool Should we use a cache?
-  */
+   * If true, requests will be cached in a folder named "cache"
+   * @var bool
+   */
   public $useCache = false;
 
   /**
-  * @var bool If true, relative href and src attributes will be converted to absolute
-  */
+   * If true, relative href and src attributes will be converted to absolute
+   * @var bool
+   */
   public $convertUrls = false;
-
-  /**
-  * @var array A list of urls that have been visited (sometimes)
-  */
+  private $lastUrl;
   private $visited;
 
   /**
-  * Return a new PGBrowser object
-  * @param string parserType the type of parser to use (phpquery/simple-html-dom)
-  */
+   * Return a new PGBrowser object
+   * @param string parserType the type of parser to use (phpquery/simple-html-dom)
+   */
   function __construct($parserType = null){
     $this->ch = curl_init();
     curl_setopt($this->ch, CURLOPT_USERAGENT, "PGBrowser/0.0.1 (http://github.com/monkeysuffrage/pgbrowser/)");
@@ -81,31 +77,15 @@ class PGBrowser{
 
   // private methods
 
-  /**
-  * Todo: fill this out
-  */
   private function clean($str){
     return preg_replace(array('/&nbsp;/'), array(' '), $str);
   }
 
-  /**
-  * Todo: fill this out
-  */
   private function cacheFilename($url){
     return 'cache/' . md5($url);
   }
 
-  /**
-  * Todo: fill this out
-  */
-  public function deleteCache($url){
-    unlink($this->cacheFilename(($url)));
-  }
-
-  /**
-  * Todo: fill this out
-  */
-  public function saveCache($url, $response){
+  private function saveCache($url, $response){
     if(!is_dir('cache')) @mkdir('cache', 0777);
     file_put_contents($this->cacheFilename($url), $response);
   }
@@ -113,37 +93,53 @@ class PGBrowser{
   // public methods
 
   /**
-  * Set a curl option
-  */
+   * Delete the cached version of an url
+   * @param string $url
+   */
+  public function deleteCache($url){
+    unlink($this->cacheFilename(($url)));
+  }
+
+  /**
+   * Set a curl option
+   * @param int $key
+   * @param string $value
+   */
   public function setopt($key, $value){
     curl_setopt($this->ch, $key, $value);
   }
 
   /**
-  * Set a proxy
-  */
+   * Set a proxy
+   * @param string $host
+   * @param string $port
+   * @param string $user
+   * @param string $password
+   */
   public function setProxy($host, $port, $user = NULL, $password = NULL){
     curl_setopt($this->ch, CURLOPT_PROXY, "http://$host:$port");
     if(!empty($user)) curl_setopt($this->ch, CURLOPT_PROXYUSERPWD, "$user:$password");
   }
 
   /**
-  * Set the user agent
-  */
-  public function setUserAgent($string){
-    curl_setopt($this->ch, CURLOPT_USERAGENT, $string);
+   * Set the user agent
+   * @param string $user_agent
+   */
+  public function setUserAgent($user_agent){
+    curl_setopt($this->ch, CURLOPT_USERAGENT, $user_agent);
   }
 
   /**
-  * Set curl timeout
-  */
+   * Set curl timeout in milliseconds
+   * @param int $timeout
+   */
   public function setTimeout($timeout){
     curl_setopt($this->ch, CURLOPT_TIMEOUT_MS, $timeout);
   }
 
   /**
-  * Todo: fill this out
-  */
+   * Todo: fill this out
+   */
   public function visited($url){
     if(!isset($this->visited)) $this->visited = array();
     if(array_search($url, $this->visited) !== false) return true;
@@ -152,8 +148,11 @@ class PGBrowser{
   }
 
   /**
-  * pretend to 'get' an url using local file.
-  */
+   * Pretend to 'get' an url but mock it using a local file.
+   * @param string $url
+   * @param string $filename
+   * @return PGPage
+   */
   public function mock($url, $filename) {
     $response = file_get_contents($filename);
     $page = new PGPage($url, $this->clean($response), $this);
@@ -162,15 +161,17 @@ class PGBrowser{
   }
 
   /**
-  * Set curl headers
-  */
+   * Set curl headers
+   */
   public function setHeaders($headers){
     curl_setopt($this->ch, CURLOPT_HTTPHEADER, $headers);
   }
 
   /**
-  * get an url
-  */
+   * Get an url
+   * @param string $url
+   * @return PGPage
+   */
   public function get($url) {
     if($this->useCache && file_exists($this->cacheFilename($url))){
       $response = file_get_contents($this->cacheFilename($url));
@@ -220,62 +221,76 @@ class PGBrowser{
  */
 class PGPage{
   /**
-   * @var string The last url visited
+   * The last url visited
+   * @var string
    */
   public $url;
 
   /**
    * The parent PGBrowser object
+   * @var PGBrowser
    */
   public $browser;
 
   /**
    * The DOM object constructed from the response
+   * @var DomDocument
    */
   public $dom;
 
   /**
    * The DomXPath object associated with the Dom
+   * @var DomXPath
    */
   public $xpath;
 
   /**
-   * @var array The PGForm objects associated with the page
+   * The PGForm objects associated with the page
+   * @var array
    */
   public $_forms;
 
   /**
-   * @var string The html title tag contents
+   * The html title tag contents
+   * @var string
    */
   public $title;
 
   /**
-   * @var string The http status code of the response
+   * The http status code of the response
+   * @var string
    */
   public $status;
 
   /**
-   * @var string The http headers
+   * The http headers
+   * @var string
    */
   public $headers = array();
 
   /**
-   * @var string The html body of the page
+   * The html body of the page
+   * @var string
    */
   public $html;
 
   /**
    * The parser can be a phpQueryObject, SimpleHtmlDom object or null
+   * @var mixed
    */
   public $parser;
 
   /**
-   * @var string The type of parser (simple, phpquery)
+   * The type of parser (simple, phpquery)
+   * @var string
    */
   public $parserType;
 
   /**
-   * Todo: fill this out
+   * @param string $url The page url
+   * @param string $response The http response
+   * @param PGBrowser $browser The parent PGBrowser object
+   * @return PGPage
    */
   function __construct($url, $response, $browser){
     $this->url = $url;
@@ -296,7 +311,7 @@ class PGPage{
   }
 
   /**
-   * Todo: fill this out
+   * Clean up some messes
    */
   function __destruct(){
     if($this->browser->parserType == 'phpquery'){
@@ -326,9 +341,6 @@ class PGPage{
     fclose($fp);
   }
 
-  /**
-   * Todo: fill this out
-   */
   private function convertUrls(){
     $uri = phpUri::parse($this->url);
     foreach($this->xpath->query('//*[@src]') as $el){
@@ -340,16 +352,10 @@ class PGPage{
     $this->html = $this->dom->saveHTML();
   }
 
-  /**
-   * Todo: fill this out
-   */
   private function is_xpath($q){
     return preg_match('/^\.?\//', $q);
   }
 
-  /**
-   * Todo: fill this out
-   */
   private function setParser($parserType, $body){
     switch(true){
       case preg_match('/simple/i', $parserType): $this->parserType = 'simple'; $this->parser = str_get_html($body); break;
@@ -423,7 +429,8 @@ class PGPage{
  */
 class PGForm{
   /**
-   * @var DomNode The form node
+   * The form node
+   * @var DomNode
    */
   public $dom;
   
@@ -438,27 +445,33 @@ class PGForm{
   public $browser;
   
   /**
-   * @var array The form fields as an associative array
+   * The form fields as an associative array
+   * @var array
    */
   public $fields;
   
   /**
-   * @var string The form's action attribute
+   * The form's action attribute
+   * @var string
    */
   public $action;
   
   /**
-   * @var string The form's method attribute
+   * The form's method attribute
+   * @var string
    */
   public $method;
   
   /**
-   * @var string The form's enctype attribute
+   * The form's enctype attribute
+   * @var string
    */
   public $enctype;
 
   /**
-   * Todo: fill this out
+   * @param DomDocument $dom The DomNode of the form
+   * @param PGPage $page The parent PGPage object
+   * @return PGForm
    */
   function __construct($dom, $page){
     require_once  'phpuri.php';
@@ -476,9 +489,6 @@ class PGForm{
 
   // private methods
 
-  /**
-   * Todo: fill this out
-   */
   private function initFields(){
     $this->fields = array();
     foreach($this->page->xpath->query('.//input|.//select', $this->dom) as $input){
@@ -523,18 +533,10 @@ class PGForm{
     $this->fields[$key] = $value;
   }
 
-  /**
-   * Create a boundary for use with multipart form encoding
-   */
   private function generate_boundary(){
     return "--". substr(md5(rand(0,32000)),0,10);
-
   }
 
-  /**
-   * Create the post body form multipart form data
-   * @return string
-   */
   private function multipart_build_query($fields, $boundary = null){
     $retval = '';
     foreach($fields as $key => $value){
