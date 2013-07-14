@@ -52,7 +52,7 @@ class PGBrowser{
 
   /**
    * Return a new PGBrowser object
-   * @param string parserType the type of parser to use (phpquery/simple-html-dom)
+   * @param string $parserType the type of parser to use (phpquery/simple-html-dom)
    */
   function __construct($parserType = null){
     $this->ch = curl_init();
@@ -322,7 +322,7 @@ class PGPage{
 
   /**
    * Parse an http response into status, headers and body
-   * @param string response
+   * @param string $response
    */
   function parseResponse($response){
     // This might look weird but it needs to be mb safe.
@@ -385,8 +385,8 @@ class PGPage{
 
   /**
    * Return the first matching node of the expression (xpath or css)
-   * @param string query the expression to search for 
-   * @param string dom the context to search
+   * @param string $query the expression to search for 
+   * @param string $dom the context to search
    * @return DomNode|phpQueryOblect
    */
   public function at($query, $dom = null){
@@ -404,8 +404,8 @@ class PGPage{
 
   /**
    * Return the matching nodes of the expression (xpath or css)
-   * @param string query the expression to search for 
-   * @param string dom the context to search
+   * @param string $query the expression to search for 
+   * @param string $dom the context to search
    * @return DomNodeList|phpQueryOblect
    */
   public function search($query, $dom = null){
@@ -526,8 +526,8 @@ class PGForm{
 
   /**
    * Set a form key/value
-   * @param string key
-   * @param string value
+   * @param string $key
+   * @param string $value
    */
   public function set($key, $value){
     $this->fields[$key] = $value;
