@@ -14,8 +14,8 @@
  * Licensed under The MIT License
  * Redistributions of files must retain the above copyright notice.
  *
- * @see http://code.nabla.net/doc/gantry4/class-phpQueryObject.html phpQueryObject
- * @see http://simplehtmldom.sourceforge.net/manual_api.htm SimpleHtmlDom
+ * @link http://code.nabla.net/doc/gantry4/class-phpQueryObject.html phpQueryObject
+ * @link http://simplehtmldom.sourceforge.net/manual_api.htm SimpleHtmlDom
  *
  * @package PGBrowser
  * @author P Guardiario <pguardiario@gmail.com>
