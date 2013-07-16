@@ -14,6 +14,9 @@
  * Licensed under The MIT License
  * Redistributions of files must retain the above copyright notice.
  *
+ * @see http://code.nabla.net/doc/gantry4/class-phpQueryObject.html phpQueryObject
+ * @see http://simplehtmldom.sourceforge.net/manual_api.htm SimpleHtmlDom
+ *
  * @package PGBrowser
  * @author P Guardiario <pguardiario@gmail.com>
  * @version 0.2
@@ -387,7 +390,7 @@ class PGPage{
    * Return the first matching node of the expression (xpath or css)
    * @param string $query the expression to search for 
    * @param string $dom the context to search
-   * @return DomNode|phpQueryOblect
+   * @return DomNode|phpQueryObject|SimpleHtmlDom
    */
   public function at($query, $dom = null){
     if($this->is_xpath($query)) return $this->search($query, $dom)->item(0);
@@ -406,7 +409,7 @@ class PGPage{
    * Return the matching nodes of the expression (xpath or css)
    * @param string $query the expression to search for 
    * @param string $dom the context to search
-   * @return DomNodeList|phpQueryOblect
+   * @return DomNodeList|phpQueryObject|SimpleHtmlDom
    */
   public function search($query, $dom = null){
     if($this->is_xpath($query)) return $this->xpath->query($query, $dom);
