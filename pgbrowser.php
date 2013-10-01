@@ -22,6 +22,8 @@
  * @version 0.2
  */
 
+require_once dirname(__FILE__) . '/phpuri.php';
+
 /**
  * PGBrowser
  * @package PGBrowser
@@ -76,6 +78,7 @@ class PGBrowser{
     curl_setopt($this->ch, CURLOPT_COOKIEJAR, 'cookies.txt');
     curl_setopt($this->ch, CURLOPT_HEADER, true);
     $this->parserType = $parserType;
+    if(function_exists('gc_enable')) gc_enable();
   }
 
   // private methods
@@ -198,7 +201,7 @@ class PGBrowser{
   * @param array  $headers http headers
   * @return PGPage
   */
-  public function post($url, $body, $headers = null) {
+  public function post($url, $body, $headers = array('Content-Type	application/x-www-form-urlencoded')) {
     if($this->useCache && file_exists($this->cacheFilename($url . $body))){
       $response = file_get_contents($this->cacheFilename($url . $body));
       $page = new PGPage($url, $this->clean($response), $this);
@@ -272,6 +275,12 @@ class PGPage{
   public $headers = array();
 
   /**
+   * The body of the page
+   * @var string
+   */
+  public $body;
+
+  /**
    * The html body of the page
    * @var string
    */
@@ -311,6 +320,7 @@ class PGPage{
     }
     if($browser->convertUrls) $this->convertUrls();
     $this->setParser($browser->parserType, $this->html);
+    if(function_exists('gc_collect_cycles')) gc_collect_cycles();
   }
 
   /**
@@ -332,15 +342,20 @@ class PGPage{
     $fp = fopen("php://memory", 'r+');
     fputs($fp, $response);
     rewind($fp);
+
     $line = fgets($fp);
+    while(preg_match('/connection established/i', $line)){
+      $line = fgets($fp);
+      $line = fgets($fp);
+    }
     if(preg_match('/^HTTP\/\d\.\d (\d{3}) /', $line, $m)) $this->status = $m[1];
 
     while($line = fgets($fp)){
-      if(!preg_match('/^(.*?): (.*)/', $line, $m)) break;
+      if(!preg_match('/^(.*?): ?(.*)/', $line, $m)) break;
       $this->headers[$m[1]] = trim($m[2]);
     }
 
-    $this->html = stream_get_contents($fp);
+    $this->html = $this->body = stream_get_contents($fp);
     fclose($fp);
   }
 
