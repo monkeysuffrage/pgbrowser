@@ -19,7 +19,7 @@
  *
  * @package PGBrowser
  * @author P Guardiario <pguardiario@gmail.com>
- * @version 0.2
+ * @version 0.3
  */
 
 require_once dirname(__FILE__) . '/phpuri.php';
@@ -304,14 +304,22 @@ class PGPage{
    * @param PGBrowser $browser The parent PGBrowser object
    * @return PGPage
    */
+
+  public $is_xml;
+
   function __construct($url, $response, $browser){
     $this->url = $url;
     $this->html = $response;
     $this->parseResponse($response);
+    $this->is_xml = (isset($this->headers['Content-Type']) && preg_match('/\bxml\b/i', $this->headers['Content-Type'])) ? true : false;
 
     $this->browser = $browser;
     $this->dom = new DOMDocument();
-    @$this->dom->loadHTML($this->html);
+    if($this->is_xml){
+      @$this->dom->loadXML($this->html);
+    } else {
+      @$this->dom->loadHTML($this->html);
+    }
     $this->xpath = new DOMXPath($this->dom);
     $this->title = ($node = $this->xpath->query('//title')->item(0)) ? $node->nodeValue : '';
     $this->forms = array();
@@ -361,13 +369,13 @@ class PGPage{
 
   private function convertUrls(){
     $uri = phpUri::parse($this->url);
-    foreach($this->xpath->query('//*[@src]') as $el){
+    foreach($this->xpath->query('//img[@src]') as $el){
       $el->setAttribute('src', $uri->join($el->getAttribute('src')));
     }
-    foreach($this->xpath->query('//*[@href]') as $el){
+    foreach($this->xpath->query('//a[@href]') as $el){
       $el->setAttribute('href', $uri->join($el->getAttribute('href')));
     }
-    $this->html = $this->dom->saveHTML();
+    $this->html = $this->is_xml ? $this->dom->saveXML() : $this->dom->saveHTML();
   }
 
   private function is_xpath($q){
@@ -411,7 +419,7 @@ class PGPage{
     if($this->is_xpath($query)) return $this->search($query, $dom)->item(0);
     switch($this->parserType){
       case 'simple':
-        $doc = $el ? $dom : $this->parser;
+        $doc = $dom ? $dom : $this->parser;
         return $doc->find($query, 0);
       case 'phpquery': 
         $dom = $this->search($query, $dom)->eq(0);
@@ -569,8 +577,7 @@ class PGForm{
    * @return PGPage
    */
   public function submit(){
-    $body = http_build_query($this->fields);
-
+    $body = http_build_query($this->fields, '', '&');
     switch($this->method){
       case 'get':
         $url = $this->action .'?' . $body;
