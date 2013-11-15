@@ -435,7 +435,7 @@ class PGPage{
    * @return DomNodeList|phpQueryObject|SimpleHtmlDom
    */
   public function search($query, $dom = null){
-    if($this->is_xpath($query)) return $this->xpath->query($query, $dom);
+    if($this->is_xpath($query)) return $dom ? $this->xpath->query($query, $dom) : $this->xpath->query($query);
     switch($this->parserType){
       case 'simple':
         $doc = $dom ? $dom : $this->parser;
