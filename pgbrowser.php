@@ -201,7 +201,7 @@ class PGBrowser{
   * @param array  $headers http headers
   * @return PGPage
   */
-  public function post($url, $body, $headers = array('Content-Type	application/x-www-form-urlencoded')) {
+  public function post($url, $body, $headers = array('Content-Type: application/x-www-form-urlencoded')) {
     if($this->useCache && file_exists($this->cacheFilename($url . $body))){
       $response = file_get_contents($this->cacheFilename($url . $body));
       $page = new PGPage($url, $this->clean($response), $this);
