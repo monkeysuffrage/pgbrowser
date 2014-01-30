@@ -75,7 +75,7 @@ class PGBrowser{
       "Keep-Alive: 300",
       "Expect:"
     ));
-    curl_setopt($this->ch, CURLOPT_COOKIEJAR, 'cookies.txt');
+    curl_setopt($this->ch, CURLOPT_COOKIEJAR, '');
     curl_setopt($this->ch, CURLOPT_HEADER, true);
     $this->parserType = $parserType;
     if(function_exists('gc_enable')) gc_enable();
@@ -206,11 +206,11 @@ class PGBrowser{
       $response = file_get_contents($this->cacheFilename($url . $body));
       $page = new PGPage($url, $this->clean($response), $this);
     } else {
-      if($headers) $this->setHeaders($headers);
+      $this->setHeaders($headers);
       curl_setopt($this->ch, CURLOPT_URL, $url);
       if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
       curl_setopt($this->ch, CURLOPT_POST, true);
-      curl_setopt($this->ch, CURLOPT_POSTFIELDS,$body);
+      curl_setopt($this->ch, CURLOPT_POSTFIELDS, $body);
       $response = curl_exec($this->ch);
       $page = new PGPage($url, $this->clean($response), $this);
       if($this->useCache) $this->saveCache($url . $body, $response);
