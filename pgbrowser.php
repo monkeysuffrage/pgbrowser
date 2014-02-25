@@ -48,6 +48,12 @@ class PGBrowser{
   public $useCache = false;
 
   /**
+   * Expire items in cache after time in seconds
+   * @var int
+   */
+  public $expireAfter = 0;
+
+  /**
    * If true, relative href and src attributes will be converted to absolute
    * @var bool
    */
@@ -94,6 +100,19 @@ class PGBrowser{
   private function saveCache($url, $response){
     if(!is_dir('cache')) @mkdir('cache', 0777);
     file_put_contents($this->cacheFilename($url), $response);
+  }
+
+  public function cacheExpired($url){
+    if(!$this->expireAfter) return false;
+    $fn = $this->cacheFilename($url);
+    if(!file_exists($fn)){
+      trigger_error('cache does not exist for: ' . $url, E_USER_WARNING);
+      return true;
+    }
+    $age = microtime(true) - filemtime($fn);
+    if($age < $this->expireAfter) return false;
+    $this->deleteCache($url);
+    return true;
   }
 
   // public methods
@@ -154,6 +173,18 @@ class PGBrowser{
   }
 
   /**
+   * Create a Page object from an url and a string
+   * @param string $url
+   * @param string $html
+   * @return PGPage
+   */
+  public function load($url, $html) {
+    $page = new PGPage($url, "HTTP/1.1 200 OK\n\n" . $this->clean($html), $this);
+    $this->lastUrl = $url;
+    return $page;
+  }
+
+  /**
    * Pretend to 'get' an url but mock it using a local file.
    * @param string $url
    * @param string $filename
@@ -180,6 +211,7 @@ class PGBrowser{
    */
   public function get($url) {
     if($this->useCache && file_exists($this->cacheFilename($url))){
+      if($this->cacheExpired($url)) return $this->get($url);
       $response = file_get_contents($this->cacheFilename($url));
       $page = new PGPage($url, $this->clean($response), $this);
     } else {
@@ -203,6 +235,7 @@ class PGBrowser{
   */
   public function post($url, $body, $headers = array('Content-Type: application/x-www-form-urlencoded')) {
     if($this->useCache && file_exists($this->cacheFilename($url . $body))){
+      if($this->cacheExpired($url . $body)) return $this->post($url, $body, $headers);
       $response = file_get_contents($this->cacheFilename($url . $body));
       $page = new PGPage($url, $this->clean($response), $this);
     } else {
@@ -576,7 +609,7 @@ class PGForm{
    * Submit the form and return a PGPage object
    * @return PGPage
    */
-  public function submit(){
+  public function submit($headers = array()){
     $body = http_build_query($this->fields, '', '&');
     switch($this->method){
       case 'get':
@@ -586,9 +619,9 @@ class PGForm{
         if('multipart/form-data' == $this->enctype){
           $boundary = $this->generate_boundary();
           $body = $this->multipart_build_query($this->fields, $boundary);
-          return $this->browser->post($this->action, $body, array("Content-Type: multipart/form-data; boundary=$boundary"));
+          return $this->browser->post($this->action, $body, array_merge(array("Content-Type: multipart/form-data; boundary=$boundary"), $headers));
         } else {
-          return $this->browser->post($this->action, $body, array("Content-Type: application/x-www-form-urlencoded"));
+          return $this->browser->post($this->action, $body, array_merge(array("Content-Type: application/x-www-form-urlencoded"), $headers));
         }
       default: echo "Unknown form method: $this->method\n";
     }
@@ -608,4 +641,5 @@ class PGForm{
     return $this->submit();
   }
 }
+
 ?>
