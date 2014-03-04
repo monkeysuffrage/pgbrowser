@@ -18,15 +18,15 @@ echo $page->title;
 
 Now do something with $page->html or query it with $page->xpath->query()
 
-PGBrowser will also let you query the page with phpquery, simple-html-dom or xpath:
+PGBrowser will also let you query the page with phpquery, simple-html-dom, [advanced-html-dom](https://sourceforge.net/projects/advancedhtmldom/) or xpath:
 
 ```php
 require 'pgbrowser.php';
 require 'phpquery.php';
-$browser = new PGBrowser('phpquery');
+$browser = new PGBrowser('advanced');
 $page = $browser->get('http://www.google.com/search?q=php');
 foreach($page->search('li.g') as $li){
-  echo $page->at('a', $li)->text() . "\n";
+  echo $li->at('a')->text . "\n";
 }
 ```
 

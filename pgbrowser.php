@@ -19,10 +19,8 @@
  *
  * @package PGBrowser
  * @author P Guardiario <pguardiario@gmail.com>
- * @version 0.3
+ * @version 0.4
  */
-
-require_once dirname(__FILE__) . '/phpuri.php';
 
 /**
  * PGBrowser
@@ -94,7 +92,7 @@ class PGBrowser{
   }
 
   private function cacheFilename($url){
-    return 'cache/' . md5($url);
+    return 'cache/' . md5($url) . '.cache';
   }
 
   private function saveCache($url, $response){
@@ -123,6 +121,16 @@ class PGBrowser{
    */
   public function deleteCache($url){
     unlink($this->cacheFilename(($url)));
+  }
+
+  /**
+   * Clear the cache
+   * @param string $url
+   */
+  public function clearCache(){
+    if($files = glob('cache/*.cache')){
+      foreach($files as $file){ unlink($file); }
+    }
   }
 
   /**
@@ -219,6 +227,7 @@ class PGBrowser{
       if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
       curl_setopt($this->ch, CURLOPT_POST, false);
       $response = curl_exec($this->ch);
+      if(!strlen($response)) throw new Exception("Empty response for: " . $url);
       $page = new PGPage($url, $this->clean($response), $this);
       if($this->useCache) $this->saveCache($url, $response);
     }
@@ -360,7 +369,7 @@ class PGPage{
       $this->_forms[] = new PGForm($form, $this);
     }
     if($browser->convertUrls) $this->convertUrls();
-    $this->setParser($browser->parserType, $this->html);
+    $this->setParser($browser->parserType, $this->html, $this->is_xml);
     if(function_exists('gc_collect_cycles')) gc_collect_cycles();
   }
 
@@ -415,8 +424,9 @@ class PGPage{
     return preg_match('/^\.?\//', $q);
   }
 
-  private function setParser($parserType, $body){
+  private function setParser($parserType, $body, $is_xml){
     switch(true){
+      case preg_match('/advanced/i', $parserType): $this->parserType = 'simple'; $this->parser = ($is_xml ? str_get_xml($body) : str_get_html($body)); break;
       case preg_match('/simple/i', $parserType): $this->parserType = 'simple'; $this->parser = str_get_html($body); break;
       case preg_match('/phpquery/i', $parserType): $this->parserType = 'phpquery'; $this->parser = @phpQuery::newDocumentHTML($body); break;
     }
@@ -533,7 +543,6 @@ class PGForm{
    * @return PGForm
    */
   function __construct($dom, $page){
-    require_once  'phpuri.php';
 
     $this->page = $page;
     $this->browser = $this->page->browser;
@@ -642,4 +651,74 @@ class PGForm{
   }
 }
 
+if(!class_exists('phpUri')){
+/**
+* @package phpUri
+*/
+class phpUri{
+  var $scheme, $authority, $path, $query, $fragment;
+
+  function __construct($string){
+    preg_match_all('/^(([^:\/?#]+):)?(\/\/([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?$/', $string ,$m);
+    $this->scheme = $m[2][0];
+    $this->authority = $m[4][0];
+    $this->path = $m[5][0];
+    $this->query = $m[7][0];
+    $this->fragment = $m[9][0];
+  }
+
+  public static function parse($string){
+    $uri = new phpUri($string);
+    return $uri;
+  }
+
+  function join($string){
+    $uri = new phpUri($string);
+    switch(true){
+      case !empty($uri->scheme): break;
+      case !empty($uri->authority): break;
+      case empty($uri->path):
+        $uri->path = $this->path;
+        if(empty($uri->query)) $uri->query = $this->query;
+      case strpos($uri->path, '/') === 0: break;
+      default:
+        $base_path = $this->path;
+        if(strpos($base_path, '/') === false){
+          $base_path = '';
+        } else {
+          $base_path = preg_replace ('/\/[^\/]+$/' ,'/' , $base_path);
+        }
+        if(empty($base_path) && empty($this->authority)) $base_path = '/';
+        $uri->path = $base_path . $uri->path; 
+    }
+    if(empty($uri->scheme)){
+      $uri->scheme = $this->scheme;
+      if(empty($uri->authority)) $uri->authority = $this->authority;
+    }
+    return $uri->to_str();
+  }
+
+  function normalize_path($path){
+    if(empty($path)) return '';
+    $normalized_path = $path;
+    $normalized_path = preg_replace('`//+`', '/' , $normalized_path, -1, $c0);
+    $normalized_path = preg_replace('`^/\\.\\.?/`', '/' , $normalized_path, -1, $c1);
+    $normalized_path = preg_replace('`/\\.(/|$)`', '/' , $normalized_path, -1, $c2);
+    $normalized_path = preg_replace('`/[^/]*?/\\.\\.(/|$)`', '/' , $normalized_path, -1, $c3);
+    $num_matches = $c0 + $c1 + $c2 + $c3;
+    return ($num_matches > 0) ? $this->normalize_path($normalized_path) : $normalized_path;
+  }
+
+  function to_str(){
+    $ret = "";
+    if(!empty($this->scheme)) $ret .= "$this->scheme:";
+    if(!empty($this->authority)) $ret .= "//$this->authority";
+    $ret .= $this->normalize_path($this->path);
+    if(!empty($this->query)) $ret .= "?$this->query";
+    if(!empty($this->fragment)) $ret .= "#$this->fragment";
+    return $ret;
+  }
+}
+
+}
 ?>
