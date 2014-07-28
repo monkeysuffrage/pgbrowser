@@ -218,7 +218,7 @@ class PGBrowser{
     curl_setopt($this->ch, CURLOPT_HTTPHEADER, $headers);
   }
 
-  public $follow_meta_redirects = false;
+  public $follow_meta_refresh = false;
 
   /**
    * Get an url
@@ -238,8 +238,8 @@ class PGBrowser{
 
       $page = new PGPage($url, $this->clean($response), $this);
 
-      // deal with meta redirects
-      if($this->follow_meta_redirects && ($meta = $page->at('meta[http-equiv="refresh"]'))){
+      // deal with meta refresh
+      if($this->follow_meta_refresh && ($meta = $page->at('meta[http-equiv="refresh"]'))){
         if(!preg_match('/^\d+; url=(.*)$/', $meta->content, $m)){
           echo "bad redirect meta: " . $meta->content;
         } else {
