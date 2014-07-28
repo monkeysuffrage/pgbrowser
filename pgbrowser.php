@@ -123,6 +123,11 @@ class PGBrowser{
     unlink($this->cacheFilename(($url)));
   }
 
+  public function isCached($url){
+    return file_exists($this->cacheFilename($url));
+  }
+
+
   /**
    * Clear the cache
    * @param string $url
@@ -168,6 +173,7 @@ class PGBrowser{
    */
   public function setTimeout($timeout){
     curl_setopt($this->ch, CURLOPT_TIMEOUT_MS, $timeout);
+    curl_setopt($this->ch, CURLOPT_CONNECTTIMEOUT_MS, $timeout);
   }
 
   /**
@@ -212,6 +218,8 @@ class PGBrowser{
     curl_setopt($this->ch, CURLOPT_HTTPHEADER, $headers);
   }
 
+  public $follow_meta_redirects = false;
+
   /**
    * Get an url
    * @param string $url
@@ -227,8 +235,22 @@ class PGBrowser{
       if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
       curl_setopt($this->ch, CURLOPT_POST, false);
       $response = curl_exec($this->ch);
-      if(!strlen($response)) throw new Exception("Empty response for: " . $url);
+
       $page = new PGPage($url, $this->clean($response), $this);
+
+      // deal with meta redirects
+      if($this->follow_meta_redirects && ($meta = $page->at('meta[http-equiv="refresh"]'))){
+        if(!preg_match('/^\d+; url=(.*)$/', $meta->content, $m)){
+          echo "bad redirect meta: " . $meta->content;
+        } else {
+          $url = $m[1];
+          curl_setopt($this->ch, CURLOPT_URL, $url);
+          if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
+          curl_setopt($this->ch, CURLOPT_POST, false);
+          $response = curl_exec($this->ch);
+          $page = new PGPage($url, $this->clean($response), $this);
+        }
+      }
       if($this->useCache) $this->saveCache($url, $response);
     }
     $this->lastUrl = $url;
@@ -601,6 +623,7 @@ class PGForm{
     $this->fields[$key] = $value;
   }
 
+/*
   private function generate_boundary(){
     return "--". substr(md5(rand(0,32000)),0,10);
   }
@@ -613,6 +636,7 @@ class PGForm{
     $retval .= "--" . $boundary . "--";
     return $retval;
   }
+*/
 
   /**
    * Submit the form and return a PGPage object
@@ -626,9 +650,10 @@ class PGForm{
         return $this->browser->get($url);
       case 'post':
         if('multipart/form-data' == $this->enctype){
-          $boundary = $this->generate_boundary();
-          $body = $this->multipart_build_query($this->fields, $boundary);
-          return $this->browser->post($this->action, $body, array_merge(array("Content-Type: multipart/form-data; boundary=$boundary"), $headers));
+          //$boundary = $this->generate_boundary();
+          //$body = $this->multipart_build_query($this->fields, $boundary);
+          // let curle mandle multipart
+          return $this->browser->post($this->action, $this->fields, array());
         } else {
           return $this->browser->post($this->action, $body, array_merge(array("Content-Type: application/x-www-form-urlencoded"), $headers));
         }
