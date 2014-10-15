@@ -1,7 +1,10 @@
 {
-    "name": "pguardiario/pgbrowser",
-    "description": "A 'pretty good' mechanize-like php library for managing cookies and submitting forms.",
+    "name": "byjg/pgbrowser",
+    "description": "A 'pretty good' mechanize-like php library for managing cookies and submitting forms. [Fork]",
     "require": {
         "php": ">=5.3.0"
+    },
+	"suggest": {
+        "electrolinux/phpquery": "phpQuery is a server-side, chainable, CSS3 selector driven Document Object Model (DOM) API based on jQuery JavaScript Library"
     }
 }

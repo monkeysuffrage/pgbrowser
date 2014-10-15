@@ -27,6 +27,15 @@
  * @package PGBrowser
  */
 class PGBrowser{
+
+  /**
+   * Define the constants for the parser
+   */
+  const SIMPLEHTMLDOM = 'simple';
+  const SIMPLEHTMLDOM_ADVC = 'advanced';
+  const PHPQUERY = 'phpquery';
+
+
   /**
    * The curl handle
    * @var mixed
