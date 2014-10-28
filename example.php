@@ -1,7 +1,7 @@
 <?php
-require 'pgbrowser.php';
+require 'vendor/autoload.php';
 
-$b = new PGBrowser();
+$b = new \PGuardiario\PGBrowser();
 $page = $b->get('http://www.google.com/');
 $form = $page->form();
 $form->set('q', 'foo');
