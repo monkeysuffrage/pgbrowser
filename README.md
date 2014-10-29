@@ -1,7 +1,9 @@
 PGBrowser
 =========
 
-A 'pretty good' mechanize-like php library for managing cookies and submitting forms. [Fork Version]
+A 'pretty good' mechanize-like php library for managing cookies and submitting forms. [Fork Version].
+This fork version was totally refactored for PSR-0 full compliant and was implemented the persistence of
+cookies between connection in the same session instance (good for crawling)
 
 Read the [Documentation](https://github.com/monkeysuffrage/pgbrowser/wiki)
 
