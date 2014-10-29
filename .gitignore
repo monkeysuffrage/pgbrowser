@@ -1,1 +1,6 @@
 cookies.txt
+*.cache
+
+/nbproject/private/
+vendor
+composer.lock
