@@ -22,6 +22,8 @@
  * @version 0.4
  */
 
+if(!class_exists('PGBrowser')){
+
 /**
  * PGBrowser
  * @package PGBrowser
@@ -91,8 +93,10 @@ class PGBrowser{
     return preg_replace(array('/&nbsp;/'), array(' '), $str);
   }
 
+  var $cacheFolder = 'cache';
+
   private function cacheFilename($url){
-    return 'cache/' . md5($url) . '.cache';
+    return $this->cacheFolder . '/' . md5($url) . '.cache';
   }
 
   private function saveCache($url, $response){
@@ -130,12 +134,15 @@ class PGBrowser{
 
   /**
    * Clear the cache
-   * @param string $url
    */
   public function clearCache(){
-    if($files = glob('cache/*.cache')){
-      foreach($files as $file){ unlink($file); }
+    if($files = glob($this->cacheFolder . '/*.cache')){
+      foreach($files as $file){
+        unlink($file);
+      }
     }
+    $files = glob($this->cacheFolder . '/*.cache');
+    return empty($files);
   }
 
   /**
@@ -145,6 +152,15 @@ class PGBrowser{
    */
   public function setopt($key, $value){
     curl_setopt($this->ch, $key, $value);
+  }
+
+  /**
+   * Test the cache
+   * return boolean
+   */
+  public function testCache(){
+    if(!is_dir($this->cacheFolder)) mkdir($this->cacheFolder, 0777, true);
+    return is_dir($this->cacheFolder) && is_writable($this->cacheFolder);
   }
 
   /**
@@ -271,6 +287,7 @@ class PGBrowser{
       $page = new PGPage($url, $this->clean($response), $this);
     } else {
       $this->setHeaders($headers);
+      $this->setHeaders(array('Expect:')); // disable expect headers because they cause problems
       curl_setopt($this->ch, CURLOPT_URL, $url);
       if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
       curl_setopt($this->ch, CURLOPT_POST, true);
@@ -674,6 +691,8 @@ class PGForm{
     // $this->set('__ASYNCPOST', 'true');
     return $this->submit();
   }
+}
+
 }
 
 if(!class_exists('phpUri')){
