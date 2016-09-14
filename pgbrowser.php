@@ -5,7 +5,7 @@
  *
  * <pre>
  * require 'pgbrowser.php';
- * 
+ *
  * $b = new PGBrowser();
  * $page = $b->get('http://www.google.com/');
  * echo $page->title;
@@ -28,7 +28,7 @@ if(!class_exists('PGBrowser')){
  * PGBrowser
  * @package PGBrowser
  */
-class PGBrowser{ 
+class PGBrowser{
   /**
    * The curl handle
    * @var mixed
@@ -493,7 +493,7 @@ class PGPage{
 
   /**
    * Return the first matching node of the expression (xpath or css)
-   * @param string $query the expression to search for 
+   * @param string $query the expression to search for
    * @param string $dom the context to search
    * @return DomNode|phpQueryObject|SimpleHtmlDom
    */
@@ -503,7 +503,7 @@ class PGPage{
       case 'simple':
         $doc = $dom ? $dom : $this->parser;
         return $doc->find($query, 0);
-      case 'phpquery': 
+      case 'phpquery':
         $dom = $this->search($query, $dom)->eq(0);
         return (0 === $dom->size() && $dom->markupOuter() == '') ? null : $dom;
       default: return $this->search($query, $dom)->item(0);
@@ -512,7 +512,7 @@ class PGPage{
 
   /**
    * Return the matching nodes of the expression (xpath or css)
-   * @param string $query the expression to search for 
+   * @param string $query the expression to search for
    * @param string $dom the context to search
    * @return DomNodeList|phpQueryObject|SimpleHtmlDom
    */
@@ -541,35 +541,35 @@ class PGForm{
    * @var DomNode
    */
   public $dom;
-  
+
   /**
    * The parent PGPage object
    */
   public $page;
-  
+
   /**
    * The GrandParent PGBrowser object
    */
   public $browser;
-  
+
   /**
    * The form fields as an associative array
    * @var array
    */
   public $fields;
-  
+
   /**
    * The form's action attribute
    * @var string
    */
   public $action;
-  
+
   /**
    * The form's method attribute
    * @var string
    */
   public $method;
-  
+
   /**
    * The form's enctype attribute
    * @var string
@@ -591,14 +591,14 @@ class PGForm{
     $this->enctype = strtolower($this->dom->getAttribute('enctype'));
     if(empty($this->enctype)) $this->enctype = '';
     $this->action = phpUri::parse($this->page->url)->join($this->dom->getAttribute('action'));
-    $this->initFields();    
+    $this->initFields();
   }
 
   // private methods
 
   private function initFields(){
     $this->fields = array();
-    foreach($this->page->xpath->query('.//input|.//select', $this->dom) as $input){
+    foreach($this->page->xpath->query('.//input|.//select|.//textarea', $this->dom) as $input){
       $set = true;
       $value = $input->getAttribute('value');
       $type = $input->getAttribute('type');
@@ -685,7 +685,7 @@ class PGForm{
    * @return PGPage
    */
   public function doPostBack($attribute){
-    preg_match_all("/['\"]([^'\"]*)['\"]/", $attribute, $m);  
+    preg_match_all("/['\"]([^'\"]*)['\"]/", $attribute, $m);
     $this->set('__EVENTTARGET', $m[1][0]);
     $this->set('__EVENTARGUMENT', $m[1][1]);
     // $this->set('__ASYNCPOST', 'true');
@@ -733,7 +733,7 @@ class phpUri{
           $base_path = preg_replace ('/\/[^\/]+$/' ,'/' , $base_path);
         }
         if(empty($base_path) && empty($this->authority)) $base_path = '/';
-        $uri->path = $base_path . $uri->path; 
+        $uri->path = $base_path . $uri->path;
     }
     if(empty($uri->scheme)){
       $uri->scheme = $this->scheme;
