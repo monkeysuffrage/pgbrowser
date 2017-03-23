@@ -251,8 +251,8 @@ class PGBrowser{
       if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
       curl_setopt($this->ch, CURLOPT_POST, false);
       $response = curl_exec($this->ch);
-
-      $page = new PGPage($url, $this->clean($response), $this);
+      $effectiveUrl = curl_getinfo($this->ch, CURLINFO_EFFECTIVE_URL);
+      $page = new PGPage($effectiveUrl, $this->clean($response), $this);
 
       // deal with meta refresh
       if($this->follow_meta_refresh && ($meta = $page->at('meta[http-equiv="refresh"]'))){
@@ -264,7 +264,8 @@ class PGBrowser{
           if(!empty($this->lastUrl)) curl_setopt($this->ch, CURLOPT_REFERER, $this->lastUrl);
           curl_setopt($this->ch, CURLOPT_POST, false);
           $response = curl_exec($this->ch);
-          $page = new PGPage($url, $this->clean($response), $this);
+          $effectiveUrl = curl_getinfo($this->ch, CURLINFO_EFFECTIVE_URL);
+          $page = new PGPage($effectiveUrl, $this->clean($response), $this);
         }
       }
       if($this->useCache) $this->saveCache($url, $response);
